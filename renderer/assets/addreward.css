@@ -18,7 +18,7 @@ body {
     font-family: 'Poppins';
     width: 250px;
     height: 100vh;
-    background: linear-gradient(to bottom, #009E49, #BAD80A);
+    background: white;;
     color: white;
     display: flex;
     flex-direction: column;
@@ -37,12 +37,12 @@ body {
     display: block;
     padding: 10px;
     margin-bottom: 5px;
-    color: black;
+    color: rgba(0, 0, 0, 0.651);
     transition: background-color 0.3s ease;
 }
 
 .sidebar a:hover {
-    background-color: green;
+    background-color: #bdd299;
     border-radius: 10px;
 }
 

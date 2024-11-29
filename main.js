@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const { SerialPort, ReadlineParser } = require('serialport');
 require('electron-reload')(__dirname, {
   electron: path.join(__dirname, 'node_modules', '.bin', 'electron'),
   hardResetMethod: 'exit'
@@ -8,6 +9,7 @@ const {
   getUserCountFromFirestore,
   getClaimedRewardsCount,
   getTotalBottleCount,
+  getTotalBottleWeight,
 
   getDataFromFirestore,
   editUserFromFirestore,
@@ -38,9 +40,9 @@ const {
   getUserPointsFromFirestore,
   
 } = require('./main/firebase');
-
+let mainWindow;
 function createWindow() {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
@@ -56,7 +58,55 @@ function createWindow() {
   mainWindow.loadFile('renderer/index.html');
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+// List available COM ports
+SerialPort.list().then(ports => {
+  ports.forEach(port => {
+    console.log(`Port: ${port.path}`);
+  });
+}).catch(err => {
+  console.error('Error listing ports:', err);
+});
+
+// Set up serial communication with ESP32
+const port = new SerialPort({ path: 'COM3', baudRate: 9600 }, (err) => {
+  if (err) {
+    return console.error('Error opening COM3:', err.message);
+  }
+});
+
+const parser = port.pipe(new ReadlineParser({ delimiter: '\r\n' }));
+
+parser.on('data', (data) => {
+  console.log('Data received from ESP32:', data);
+  if (data.includes('bottle_detected') && mainWindow) {
+    console.log('Bottle detection confirmed, sending to renderer');
+    try {
+      mainWindow.webContents.send('bottle-detected');
+    } catch (error) {
+      console.error('Error sending bottle detection to renderer:', error);
+    }
+  }
+});
+
+port.on('error', (err) => {
+  console.error('Serial port error:', err);
+});
 
 ipcMain.handle('get-user-count', async () => {
   try {
@@ -85,6 +135,17 @@ ipcMain.handle('getTotalBottleCount', async () => {
   } catch (error) {
     console.error('Error in IPC handling of total bottle count:', error);
     return 0; // Return 0 on error for consistency
+  }
+});
+
+// Example usage in an Electron API handler
+ipcMain.handle('getTotalBottleWeight', async () => {
+  try {
+      const totalWeight = await getTotalBottleWeight();
+      return totalWeight;
+  } catch (error) {
+      console.error('Error fetching total bottle weight:', error);
+      throw error;
   }
 });
 
@@ -280,13 +341,13 @@ ipcMain.handle('verify-rfid', async (event, rfidCode) => {
 });
 
 ipcMain.handle('store-user-points', async (event, user) => {
-  try {
-    await addUserPointToFirestore(user);
-    return { success: true };
-  } catch (error) {
-    console.error('Error storing user points:', error);
-    return { success: 'Failed to add user point'  };
-  }
+    try {
+        await addUserPointToFirestore(user);
+        return { success: true };
+    } catch (error) {
+        console.error('Error storing user points:', error);
+        return { success: false, error: error.message };
+    }
 });
 
 

@@ -5,26 +5,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
-    <link id="dynamic-css" rel="stylesheet" href="assets/dashboard.css"> <!-- Default CSS -->
+    <link id="dynamic-css" rel="stylesheet" href="assets/style.css"> <!-- Default CSS -->
     <script src="https://kit.fontawesome.com/3980f875bb.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
-<body>
+<body onload="showContent('dashboard')">
     <div class="container">
         <div class="sidebar" id="sidebar">
-            <a href="#" onclick="showContent('dashboard')"><i
+            <h2>Bottle Points</h2>
+            <a href="#" onclick="showContent('dashboard')" id="dashboard-link"><i
                     class="fa-solid fa-chart-line"></i>&nbsp;&nbsp;&nbsp;Dashboard</a>
-            <a href="#" onclick="showContent('manage-user')"><i
+            <a href="#" onclick="showContent('manage-user')" id="manage-user-link"><i
                     class="fa-solid fa-users-line"></i>&nbsp;&nbsp;&nbsp;Manage User</a>
-            <a href="#" onclick="showContent('leaderboard')"><i
+            <a href="#" onclick="showContent('leaderboard')" id="leaderboard-link"><i
                     class="fa-solid fa-ranking-star"></i>&nbsp;&nbsp;&nbsp;Leader Board</a>
-            <a href="#" onclick="showContent('points-allocation')"><i
+            <a href="#" onclick="showContent('points-allocation')" id="points-allocation-link"><i
                     class="fa-solid fa-coins"></i>&nbsp;&nbsp;&nbsp;Points Allocation</a>
-            <a href="#" onclick="showContent('redemption-reward')"><i
+            <a href="#" onclick="showContent('redemption-reward')" id="redemption-reward-link"><i
                     class="fa-solid fa-gift"></i>&nbsp;&nbsp;&nbsp;Redemption Rewards</a>
-            <a href="#" onclick="showContent('pet-bottles')"><i
+            <a href="#" onclick="showContent('pet-bottles')" id="pet-bottles-link"><i
                     class="fa-solid fa-bottle-water"></i>&nbsp;&nbsp;&nbsp;PET Bottles</a>
-            <a href="#" onclick="showContent('manage-rewards')"><i class="fa-solid fa-gift"></i>&nbsp;&nbsp;&nbsp;Manage
+            <a href="#" onclick="showContent('manage-rewards')" id="manage-rewards-link"><i
+                    class="fa-solid fa-gift"></i>&nbsp;&nbsp;&nbsp;Manage
                 Rewards</a>
             <a href="#" onclick="showContent('sales')"><i
                     class="fa-solid fa-bottle-water"></i>&nbsp;&nbsp;&nbsp;Sales</a>
@@ -33,6 +36,7 @@
         </div>
 
         <div class="content" id="content">
+            <link id="dynamic-css" rel="stylesheet" href="">
             <!-- Content will be displayed here -->
         </div>
     </div>
@@ -41,119 +45,135 @@
         async function showContent(section, userId = null) {
             const content = document.getElementById('content');
             const dynamicCss = document.getElementById('dynamic-css');
+            const sidebarLinks = document.querySelectorAll('.sidebar a');
+
+            // Remove active class from all sidebar links
+            sidebarLinks.forEach(link => link.classList.remove('active'));
+
             switch (section) {
                 case 'dashboard':
-                    dynamicCss.href = 'assets/dashboard.css';
+                    dynamicCss.href = 'assets/style.css';
+                    document.getElementById('dashboard-link').classList.add('active');
                     content.innerHTML = `
-                        <div class="grid-container">
-                            <div class="grid-item box1" id="user-count-container">
-                                <div class="user-count-text" id="user-count-text">Total Users:</div>
-                                <div class="user-count-number" id="user-count">Loading...</div>
+                <div class="grid-container">
+                    <div class="grid-item box1" id="user-count-container">
+                        <div class="user-count-text" id="user-count-text">Total Users:</div>
+                        <div class="user-count-number" id="user-count">Loading...</div>
+                    </div>
+                    <div class="grid-item box2" id="claimed-rewards-container">
+                        <div class="claimed-rewards-text" id="claimed-rewards-text">Total Claimed Rewards:</div>
+                        <div class="claimed-rewards-number" id="claimed-rewards-count">Loading...</div>
+                    </div>
+                    <div class="grid-item box3" id="bottle-contribution-container">
+                        <div class="bottle-contribution-text" id="bottle-count-text">Total Bottle Contribution:</div>
+                        <div class="bottle-contribution-number" id="bottle-count">Loading...</div>
+                    </div>
+                    <div class="grid-item full">
+                        <table id="userTable">
+                            <thead>
+                                <tr>
+                                    <th>Rank Number</th>
+                                    <th>Student Number</th>
+                                    <th>Full Name</th>
+                                    <th>Bottle Contribution</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="grid-item wide">
+                        <button onclick="openModal()">Start Scan</button>
+                        <div class="progress-container">
+                            <p id="progress-description">Bottle Disposal Progress</p>
+                            <div class="progress-circle" id="progress-circle">
+                                <span id="progress-text">0%</span>
                             </div>
-                            <div class="grid-item box2" id="claimed-rewards-container">
-                                <div class="claimed-rewards-text" id="claimed-rewards-text">Total Claimed Rewards:</div>
-                                <div class="claimed-rewards-number" id="claimed-rewards-count">Loading...</div>
+                            <p id="progress-descriptions">Total Weight: 0g / 20000g</p>
+                            
+                        </div>
+                    </div>
+                </div>
+                <div id="userModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeModal()">&times;</span>
+                        <div class="modal-body">
+                            <div class="modal-section user-info">
+                                <h2>User Information</h2>
+                                <img id="userAvatar" src="assets/images/default-profile.png" alt="User Avatar" class="avatar">
+                                <div class="user-details">
+                                    <p>Name:</p>
+                                    <p id="userName"></p>
+                                    <p>Student Number:</p>
+                                    <p id="userStudentNumber"></p>
+                                </div>
+                                <button id="start-scan-user" class="styled-button">Scan QR</button>
                             </div>
-                            <div class="grid-item box3" id="bottle-contribution-container">
-                                <div class="bottle-contribution-text" id="bottle-count-text">Total Bottle Contribution:</div>
-                                <div class="bottle-contribution-number" id="bottle-count">Loading...</div>
-                            </div>
-                            <div class="grid-item full">
-                                <table id="userTable">
-                                    <thead>
-                                        <tr>
-                                            <th>Rank Number</th>
-                                            <th>Student Number</th>
-                                            <th>Full Name</th>
-                                            <th>Bottle Contribution</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="grid-item wide">
-                                <button onclick="openModal()">Start Scan</button>
+                            <div class="modal-section bottle-info-section" id="bottle-info-section">
+                                <h3>Bottle Information</h3>
+                                <div class="bottle-table-container">
+                                    <table id="bottleTable">
+                                        <thead>
+                                            <tr>
+                                                <th>No.</th>
+                                                <th>Brand Name</th>
+                                                <th>Size</th>
+                                                <th>Points</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="3" style="text-align:right;"><strong>Total Points:</strong></td>
+                                                <td id="totalPoints">0</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                                <div class="button-container">
+                                    <button id="start-scan-bottle" class="styled-button disabled-button" disabled>Scan Bottle</button>
+                                    <button id="confirm-scan-bottle" class="styled-button" style="display: none;">Confirm</button>
+                                </div>
                             </div>
                         </div>
-                        <div id="userModal" class="modal">
-                        <div class="modal-content">
-                            <span class="close" onclick="closeModal()">&times;</span>
-                            <div class="modal-body">
-                                <div class="modal-section user-info">
-                                    <h2>User Information</h2>
-                                    <img id="userAvatar" src="assets/images/default-profile.png" alt="User Avatar" class="avatar">
-                                    <div class="user-details">
-                                        <p>Name:</p>
-                                        <p id="userName"></p>
-                                        <p>Student Number:</p>
-                                        <p id="userStudentNumber"></p>
-                                    </div>
-                                    <button id="start-scan-user" class="styled-button">Scan QR</button>
-                                </div>
-                                <div class="modal-section bottle-info-section" id="bottle-info-section">
-                                    <h3>Bottle Information</h3>
-                                    <div class="bottle-table-container">
-                                        <table id="bottleTable">
-                                            <thead>
-                                                <tr>
-                                                    <th>No.</th>
-                                                    <th>Brand Name</th>
-                                                    <th>Size</th>
-                                                    <th>Points</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                            </tbody>
-                                            <tfoot>
-                                                <tr>
-                                                    <td colspan="3" style="text-align:right;"><strong>Total Points:</strong></td>
-                                                    <td id="totalPoints">0</td>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
-                                    </div>
-                                    <div class="button-container">
-                                        <button id="start-scan-bottle" class="styled-button disabled-button" disabled>Scan Bottle</button>
-                                        <button id="confirm-scan-bottle" class="styled-button" style="display: none;">Confirm</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
-
+                    </div>
+                </div>`;
                     displayUserCount();
                     displayClaimedRewardsCount();
                     displayBottleCount();
                     fetchData();
+                    updateProgressBar(); // Call the function to update the progress bar
                     break;
                 case 'manage-user':
-                    dynamicCss.href = 'assets/manageuser.css';
+                    dynamicCss.href = 'assets/style.css';
+                    document.getElementById('manage-user-link').classList.add('active');
                     content.innerHTML = `
-                        <div class="main-content">
-                            <h2>Manage Users</h2>
-                            <div class="search-bar">
-                                <input type="text" id="search-input" placeholder="Search by full name or student number">
-                            </div>
-                            <table id="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Student Number</th>
-                                        <th>Full Name</th>
-                                        <th>Email</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                </tbody>
-                            </table>
-                            <button id="get-data">Get Data</button> 
-                        </div>`;
+                <div class="main-content">
+                    <h2>Manage Users</h2>
+                    <div class="search-bar">
+                        <input type="text" id="search-input" placeholder="Search by full name or student number">
+                    </div>
+                    <table id="data-table">
+                        <thead>
+                            <tr>
+                                <th>Student Number</th>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                    <button id="get-data">Get Data</button> 
+                </div>`;
                     initializeManageUser();
                     break;
-
+                // Add other cases here
                 case 'leaderboard':
-                    dynamicCss.href = 'assets/leaderboard.css';
+                    dynamicCss.href = 'assets/style.css';
+                    document.getElementById('leaderboard-link').classList.add('active');
                     content.innerHTML = `
                     <div class="main-content">
                         <h2>Leaderboard</h2>
@@ -182,7 +202,8 @@
                     initializeLeaderboard();
                     break;
                 case 'points-allocation':
-                    dynamicCss.href = 'assets/pointsallocation.css';
+                    dynamicCss.href = 'assets/style.css';
+                    document.getElementById('points-allocation-link').classList.add('active');
                     content.innerHTML = `
                     <div class="main-content">
                         <h2>Points Allocation</h2>
@@ -205,16 +226,17 @@
                     initializePointsAllocation();
                     break;
                 case 'redemption-reward':
-                    dynamicCss.href = 'assets/redemptionrewards.css';
+                    dynamicCss.href = 'assets/style.css';
+                    document.getElementById('redemption-reward-link').classList.add('active');
                     content.innerHTML = `
                     <div class="main-content">
                         <h2>Redemption Rewards</h2>
-                        <div id="status"></div>
+                        <div id="status" class="status-message"></div>
                         <button class="Reward" onclick="showContent('add-reward')">Add New Reward</button>
                         <div id="rewards-container" class="rewards-grid">
                             <!-- Rewards will be dynamically displayed here -->
                         </div>
-                        <button id="fetch-rewards-btn">Refresh Rewards</button>
+                        <button id="fetch-rewards-btn" class="styled-button">Refresh Rewards</button>
                         <!-- Modal for editing reward -->
                         <div id="editModal" class="modal">
                             <div class="modal-content">
@@ -240,7 +262,8 @@
                     initializeRedemptionReward();
                     break;
                 case 'pet-bottles':
-                    dynamicCss.href = 'assets/petbottles.css';
+                    dynamicCss.href = 'assets/style.css';
+                    document.getElementById('pet-bottles-link').classList.add('active');
                     content.innerHTML = `
                     <div class="main-content">
                         <h2>PET Bottles</h2>
@@ -294,7 +317,8 @@
                     break;
 
                 case 'manage-rewards':
-                    dynamicCss.href = 'assets/manageclaimedrewards.css';
+                    dynamicCss.href = 'assets/style.css';
+                    document.getElementById('manage-rewards-link').classList.add('active');
                     content.innerHTML = `
                     <div class="main-content">
                         <h2>Manage Claimed Rewards</h2>
@@ -488,6 +512,49 @@
             }
         }
 
+        async function updateProgressBar() {
+            try {
+                // Fetch total accumulated weight from all userPoints documents
+                const totalWeight = await window.electronAPI.getTotalBottleWeight();
+
+                // Set target weight (20kg = 20000g)
+                const targetWeight = 20000;
+
+                // Calculate progress percentage
+                const progress = Math.min((totalWeight / targetWeight) * 100, 100);
+
+                // Update progress circle and text
+                const progressCircle = document.getElementById('progress-circle');
+                const progressText = document.getElementById('progress-text');
+                const progressDescription = document.getElementById('progress-descriptions');
+
+                // Animate the progress
+                let start = 0;
+                const end = Math.round(progress);
+                const duration = 1000;
+                const stepTime = Math.abs(Math.floor(duration / end));
+                let current = start;
+                const increment = end > start ? 1 : -1;
+
+                // Update progress description to show actual weight
+                progressDescription.textContent = `Weight Collected: ${totalWeight.toFixed(2)}g / ${targetWeight}g`;
+
+                const timer = setInterval(() => {
+                    current += increment;
+                    progressCircle.style.setProperty('--progress', `${current}%`);
+                    progressText.textContent = `${current}%`;
+
+                    if (current === end) {
+                        clearInterval(timer);
+                    }
+                }, stepTime);
+            } catch (error) {
+                console.error('Error updating progress bar:', error);
+                const progressText = document.getElementById('progress-text');
+                progressText.textContent = 'Error';
+            }
+        }
+
         async function fetchData() {
             try {
                 const data = await window.electronAPI.getUserPoints();
@@ -535,15 +602,19 @@
         }
 
         function openModal() {
-            document.getElementById('userModal').style.display = 'block';
-            document.getElementById('bottle-info-section').style.display = 'block';
-            startScanBottleButton.classList.add('disabled-button');
-            startScanBottleButton.disabled = true;
-            confirmScanBottleButton.style.display = 'none';
+            const modal = document.getElementById('userModal');
+            modal.style.display = 'block';
+            initializeScanningFunctionality();
         }
 
         function closeModal() {
-            document.getElementById('userModal').style.display = 'none';
+            const modal = document.getElementById('userModal');
+            modal.style.display = 'none';
+            // Reset scanning state
+            document.getElementById('start-scan-user').disabled = false;
+            document.getElementById('userName').textContent = '';
+            document.getElementById('userStudentNumber').textContent = '';
+            document.getElementById('userAvatar').src = 'assets/images/default-profile.png';
         }
 
         let currentUserId = null;
@@ -560,148 +631,372 @@
                     document.getElementById('userName').textContent = user.name;
                     document.getElementById('userStudentNumber').textContent = user.studentNumber;
                     document.getElementById('userAvatar').src = user.avatar || 'assets/images/default-profile.png';
+
+                    // Enable bottle scanning
+                    const startScanBottleButton = document.getElementById('start-scan-bottle');
                     startScanBottleButton.classList.remove('disabled-button');
                     startScanBottleButton.disabled = false;
-                    confirmScanBottleButton.style.display = 'inline-block';
 
-                    startScanUserButton.disabled = true;
+                    // Disable user scanning
+                    document.getElementById('start-scan-user').disabled = true;
+                    isScanningUser = false;
                 } else {
                     console.error('No such user!');
+                    alert('User not found');
                 }
             } catch (error) {
                 console.error('Error fetching user info:', error);
+                alert('Error fetching user information');
             }
         }
 
         let bottleCounter = 1;
         let totalPoints = 0;
+        let totalWeight = 0;
 
         async function addBottleInfo(barcode_number) {
             try {
-                const data = await window.electronAPI.getPetBottles();
-                const bottle = data.find(bottle => bottle.barcode_number === barcode_number);
+                console.log('Processing bottle scan:', barcode_number);
+                const bottles = await window.electronAPI.getPetBottles();
+                const bottle = bottles.find(b => b.barcode_number === barcode_number);
+
                 if (bottle) {
+                    // Add bottle info to table
                     const bottleTableBody = document.querySelector('#bottleTable tbody');
+                    const rowCount = bottleTableBody.children.length + 1;
+
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${bottleCounter++}</td> <!-- Sequential numbering -->
-                        <td>${bottle.brand_name}</td>
-                        <td>${bottle.size} ${bottle.size_unit}</td>
-                        <td>${bottle.points}</td>
-                    `;
+                <td>${rowCount}</td>
+                <td>${bottle.brand_name}</td>
+                <td>${bottle.size} ${bottle.size_unit}</td>
+                <td>${bottle.points}</td>
+            `;
                     bottleTableBody.appendChild(row);
 
-                    totalPoints += Number(bottle.points);
-                    document.getElementById('totalPoints').textContent = totalPoints;
+                    // Update total points
+                    const currentTotal = parseInt(document.getElementById('totalPoints').textContent) || 0;
+                    const newTotal = currentTotal + parseInt(bottle.points);
+                    document.getElementById('totalPoints').textContent = newTotal;
+
+                    // Show loading alert
+                    showBottleWaitingAlert();
+
+                    // Enable scanning states
+                    bottleScanned = true;
+                    isScanningBottle = false;
                 } else {
-                    console.error('No such bottle!');
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'No bottle found with this barcode',
+                        icon: 'error'
+                    });
                 }
             } catch (error) {
-                console.error('Error fetching bottle info:', error);
+                console.error('Error processing bottle scan:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Error processing bottle scan',
+                    icon: 'error'
+                });
             }
         }
 
-        async function storeUserPoints() {
-            const userName = document.getElementById('userName').textContent;
-            const userStudentNumber = document.getElementById('userStudentNumber').textContent;
-            const userAvatar = document.getElementById('userAvatar').src;
-            const totalPoints = document.getElementById('totalPoints').textContent;
-            const bottleCount = bottleCounter - 1;
-
-            const timestamp = new Date().toLocaleString('en-US', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false
+        // Add this function to show the waiting alert
+        function showBottleWaitingAlert() {
+            Swal.fire({
+                title: 'Waiting for bottle...',
+                text: 'Please place the bottle in the bin',
+                icon: 'info',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
             });
+        }
+
+        // Update the bottle detection handler
+        window.electronAPI.onBottleDetected((_event) => {
+            // Check if modal is open and we're in bottle scanning mode
+            const modal = document.getElementById('userModal');
+            if (modal.style.display !== 'block' || !bottleScanned) {
+                console.log('Modal is closed or not in bottle scanning mode, ignoring detection');
+                return;
+            }
+
+            console.log('Bottle detected event received');
+            bottleDetected = true;
+
+            // Close the loading alert
+            Swal.close();
+
+            // Show auto-closing success message
+            Swal.fire({
+                title: 'Success!',
+                text: 'Bottle detected! You can now scan another bottle or confirm.',
+                icon: 'success',
+                timer: 2000, // Will automatically close after 2 seconds
+                showConfirmButton: false, // Removes the OK button
+                timerProgressBar: true // Shows a progress bar
+            }).then(() => {
+                // Enable the confirm button
+                const confirmButton = document.getElementById('confirm-scan-bottle');
+                confirmButton.style.display = 'inline-block';
+
+                // Reset scanning state for next bottle
+                isScanningBottle = false;
+                bottleScanned = false;
+
+                // Enable scan bottle button for next scan
+                const scanBottleButton = document.getElementById('start-scan-bottle');
+                scanBottleButton.disabled = false;
+            });
+        });
+
+        // Update the start bottle scan button handler
+        document.getElementById('start-scan-bottle').addEventListener('click', () => {
+            if (!document.getElementById('userName').textContent) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Please scan user QR code first',
+                    icon: 'error'
+                });
+                return;
+            }
+
+            console.log('Starting bottle scan');
+            isScanningUser = false;
+            isScanningBottle = true;
+            bottleScanned = false;
+            barcodeInput = '';
+
+            Swal.fire({
+                title: 'Ready',
+                text: 'Please scan the bottle barcode',
+                icon: 'info',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        });
+
+        // Update the confirm button handler
+        document.getElementById('confirm-scan-bottle').addEventListener('click', async () => {
+            if (!bottleDetected) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Please place the bottle in the bin first',
+                    icon: 'error'
+                });
+                return;
+            }
 
             try {
-                await window.electronAPI.storeUserPoints({
-                    id: currentUserId,
-                    name: userName,
-                    studentNumber: userStudentNumber,
-                    avatar: userAvatar,
-                    totalPoints: Number(totalPoints),
-                    bottleCount: bottleCount,
-                    timestamp: timestamp
+                await storeUserPoints();
+                resetModalState();
+
+                Swal.fire({
+                    title: 'Success!',
+                    text: 'Points stored successfully',
+                    icon: 'success'
                 });
-                alert('Data stored successfully!');
-                resetModal();
             } catch (error) {
-                console.error('Error storing data:', error);
-                alert('Error storing data.');
+                console.error('Error storing points:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Failed to store points',
+                    icon: 'error'
+                });
+            }
+        });
+
+        async function storeUserPoints() {
+            try {
+                // Get all bottles from the table
+                const bottleTableBody = document.querySelector('#bottleTable tbody');
+                const rows = bottleTableBody.getElementsByTagName('tr');
+                let totalWeight = 0;
+                let totalPoints = parseInt(document.getElementById('totalPoints').textContent) || 0;
+
+                // Calculate total weight from all scanned bottles
+                for (let row of rows) {
+                    const brandName = row.cells[1].textContent; // Get brand name from table
+                    try {
+                        // Fetch bottle details from Firebase
+                        const bottles = await window.electronAPI.getPetBottles();
+                        const bottle = bottles.find(b => b.brand_name === brandName);
+                        if (bottle) {
+                            // Convert weight to number and add to total
+                            const weight = parseFloat(bottle.weight) || 0;
+                            totalWeight += weight;
+                        }
+                    } catch (error) {
+                        console.error('Error fetching bottle details:', error);
+                    }
+                }
+
+                const userPointData = {
+                    id: currentUserId,
+                    name: document.getElementById('userName').textContent,
+                    studentNumber: document.getElementById('userStudentNumber').textContent,
+                    avatar: document.getElementById('userAvatar').src,
+                    totalPoints: totalPoints,
+                    bottleCount: bottleTableBody.children.length,
+                    totalWeight: totalWeight, // Add the total weight
+                    timestamp: new Date().toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    })
+                };
+
+                const result = await window.electronAPI.storeUserPoints(userPointData);
+
+                if (result.success) {
+                    // Reset states and UI
+                    bottleScanned = false;
+                    bottleDetected = false;
+
+                    // Clear the table
+                    bottleTableBody.innerHTML = '';
+                    document.getElementById('totalPoints').textContent = '0';
+
+                    // Hide confirm button and reset scan button
+                    document.getElementById('confirm-scan-bottle').style.display = 'none';
+                    document.getElementById('start-scan-bottle').disabled = false;
+
+                    // Show success message
+                    await Swal.fire({
+                        title: 'Success!',
+                        text: 'Points and weight recorded successfully. Please check your account to verify. Thanks for your contribution!',
+                        icon: 'success'
+                    });
+
+                    // Reset modal
+                    resetModal();
+                } else {
+                    throw new Error('Failed to store points');
+                }
+            } catch (error) {
+                console.error('Error storing points:', error);
+                await Swal.fire({
+                    title: 'Error',
+                    text: 'Failed to store points',
+                    icon: 'error'
+                });
             }
         }
 
+        // Update the resetModal function
         function resetModal() {
+            // Reset user info
             document.getElementById('userName').textContent = '';
             document.getElementById('userStudentNumber').textContent = '';
             document.getElementById('userAvatar').src = 'assets/images/default-profile.png';
 
+            // Reset bottle table
             const bottleTableBody = document.querySelector('#bottleTable tbody');
             bottleTableBody.innerHTML = '';
             document.getElementById('totalPoints').textContent = '0';
+
+            // Reset buttons
+            const startScanBottleButton = document.getElementById('start-scan-bottle');
+            const confirmScanBottleButton = document.getElementById('confirm-scan-bottle');
             startScanBottleButton.disabled = true;
             confirmScanBottleButton.style.display = 'none';
 
+            // Reset states
             bottleCounter = 1;
             totalPoints = 0;
+            bottleScanned = false;
+            bottleDetected = false;
+            currentUserId = null;
 
-            startScanUserButton.disabled = false;
+            // Enable user scanning
+            document.getElementById('start-scan-user').disabled = false;
         }
 
-        let barcodeInput = '';
-        document.addEventListener('keydown', async (event) => {
-            if (isScanningUser || isScanningBottle) {
-                if (event.key === 'Enter') {
-                    console.log('Barcode scanned:', barcodeInput);
-                    if (isScanningUser) {
-                        await displayUserInfo(barcodeInput);
-                        isScanningUser = false;
-                    } else if (isScanningBottle) {
-                        await addBottleInfo(barcodeInput);
+
+        function initializeScanningFunctionality() {
+            // Get fresh references to buttons
+            const startScanUserButton = document.getElementById('start-scan-user');
+            const startScanBottleButton = document.getElementById('start-scan-bottle');
+            const confirmScanBottleButton = document.getElementById('confirm-scan-bottle');
+
+            // Remove existing event listeners
+            const newStartScanUserButton = startScanUserButton.cloneNode(true);
+            const newStartScanBottleButton = startScanBottleButton.cloneNode(true);
+            const newConfirmScanBottleButton = confirmScanBottleButton.cloneNode(true);
+
+            startScanUserButton.parentNode.replaceChild(newStartScanUserButton, startScanUserButton);
+            startScanBottleButton.parentNode.replaceChild(newStartScanBottleButton, startScanBottleButton);
+            confirmScanBottleButton.parentNode.replaceChild(newConfirmScanBottleButton, confirmScanBottleButton);
+
+            // Add keydown event listener for scanning
+            document.addEventListener('keydown', async (event) => {
+                if (isScanningUser || isScanningBottle) {
+                    if (event.key === 'Enter') {
+                        console.log('Scanned barcode:', barcodeInput);
+                        if (isScanningUser) {
+                            await displayUserInfo(barcodeInput);
+                        } else if (isScanningBottle) {
+                            await addBottleInfo(barcodeInput);
+                        }
+                        barcodeInput = '';
+                    } else {
+                        barcodeInput += event.key;
                     }
-                    barcodeInput = '';
-                } else {
-                    barcodeInput += event.key;
                 }
-            }
-        });
+            });
 
-        const startScanUserButton = document.getElementById('start-scan-user');
-        const startScanBottleButton = document.getElementById('start-scan-bottle');
-        const confirmScanBottleButton = document.getElementById('confirm-scan-bottle');
+            // Start user scanning
+            newStartScanUserButton.addEventListener('click', () => {
+                console.log('Starting user scan');
+                isScanningUser = true;
+                isScanningBottle = false;
+                barcodeInput = '';
+                alert('Ready to scan user QR code');
+            });
 
-        startScanUserButton.addEventListener('click', () => {
-            isScanningUser = true;
-            alert('Scanner connected. Ready to scan user QR code.');
-        });
+            // Start bottle scanning
+            newStartScanBottleButton.addEventListener('click', () => {
+                console.log('Starting bottle scan');
+                if (!document.getElementById('userName').textContent) {
+                    alert('Please scan user QR code first');
+                    return;
+                }
+                isScanningUser = false;
+                isScanningBottle = true;
+                barcodeInput = '';
+                alert('Ready to scan bottle barcode');
+            });
 
-
-        //START TO SCAN FOR MODAL IN DASHBOARD
-        startScanBottleButton.addEventListener('click', () => {
-            isScanningBottle = true;
-            alert('Scanner connected. Ready to scan bottle barcode.');
-        });
-
-        confirmScanBottleButton.addEventListener('click', async () => {
-            isScanningBottle = false;
-            await storeUserPoints();
-        });
-
-        function openModal() {
-            document.getElementById('userModal').style.display = 'block';
+            // Confirm bottle scan
+            newConfirmScanBottleButton.addEventListener('click', async () => {
+                if (bottleDetected) {
+                    await storeUserPoints();
+                    bottleScanned = false;
+                    bottleDetected = false;
+                    newConfirmScanBottleButton.style.display = 'none';
+                    newStartScanBottleButton.disabled = false;
+                } else {
+                    alert('Please place the bottle in the bin to proceed.');
+                }
+            });
         }
 
-        function closeModal() {
-            document.getElementById('userModal').style.display = 'none';
-        }
+        // startScanUserButton.addEventListener('click', () => {
+        //     isScanningUser = true;
+        //     alert('Scanner connected. Ready to scan user QR code.');
+        // });
+
+
 
         // Initialize the dashboard on load
-        showContent('dashboard');
 
         // FUNCTION FOR MANAGE USER
 
@@ -1512,6 +1807,34 @@
 
         // Initialize the dashboard on load
         showContent('dashboard');
+
+        async function fetchDashboardData() {
+            try {
+                const userCount = await window.electronAPI.getUserCount();
+                const claimedRewards = await window.electronAPI.getClaimedRewardsCount();
+                const bottleContributions = await window.electronAPI.getBottleContributions();
+
+                document.getElementById('user-count').innerText = userCount.total;
+                document.getElementById('user-change').innerText = userCount.change > 0 ? `↑ ${userCount.change}%` : `↓ ${Math.abs(userCount.change)}%`;
+                document.getElementById('user-change').classList.toggle('positive', userCount.change > 0);
+                document.getElementById('user-change').classList.toggle('negative', userCount.change < 0);
+
+                document.getElementById('claimed-rewards-count').innerText = claimedRewards.total;
+                document.getElementById('rewards-change').innerText = claimedRewards.change > 0 ? `↑ ${claimedRewards.change}%` : `↓ ${Math.abs(claimedRewards.change)}%`;
+                document.getElementById('rewards-change').classList.toggle('positive', claimedRewards.change > 0);
+                document.getElementById('rewards-change').classList.toggle('negative', claimedRewards.change < 0);
+
+                document.getElementById('bottle-count').innerText = bottleContributions.total;
+                document.getElementById('bottle-change').innerText = bottleContributions.change > 0 ? `↑ ${bottleContributions.change}%` : `↓ ${Math.abs(bottleContributions.change)}%`;
+                document.getElementById('bottle-change').classList.toggle('positive', bottleContributions.change > 0);
+                document.getElementById('bottle-change').classList.toggle('negative', bottleContributions.change < 0);
+            } catch (error) {
+                console.error('Error fetching dashboard data:', error);
+            }
+        }
+
+        // Call this function when the dashboard is loaded
+        fetchDashboardData();
     </script>
 </body>
 

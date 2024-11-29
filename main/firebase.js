@@ -52,6 +52,27 @@ async function getTotalBottleCount() {
   }
 }
 
+
+async function getTotalBottleWeight() {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'userPoints'));
+    let totalWeight = 0;
+    
+    querySnapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.totalWeight) {
+        totalWeight += parseFloat(data.totalWeight);
+      }
+    });
+    
+    return totalWeight;
+  } catch (error) {
+    console.error('Error fetching total bottle weight:', error);
+    throw error;
+  }
+}
+
+
 async function getDataFromFirestore() {
   try {
     const querySnapshot = await getDocs(collection(db, 'users'));
@@ -302,6 +323,7 @@ module.exports = {
   getUserCountFromFirestore,
   getClaimedRewardsCount,
   getTotalBottleCount,
+  getTotalBottleWeight,
 
   getDataFromFirestore,
   editUserFromFirestore,

@@ -4,6 +4,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getUserCount: () => ipcRenderer.invoke('get-user-count'),
   getClaimedRewardsCount: () => ipcRenderer.invoke('get-claimed-rewards-count'),
   getTotalBottleCount: () => ipcRenderer.invoke('getTotalBottleCount'),
+  getTotalBottleWeight: () => ipcRenderer.invoke('getTotalBottleWeight'),
+  
 
   getData: () => ipcRenderer.invoke('get-data'),
   editUser: (userId, studentNumber, name, email) => ipcRenderer.invoke('edit-user', userId, studentNumber, name, email),
@@ -31,4 +33,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   storeUserPoints: (user) => ipcRenderer.invoke('store-user-points', user),
   getUserPoints: () => ipcRenderer.invoke('get-UserPoints'),
+  onBottleDetected: (callback) => ipcRenderer.on('bottle-detected', callback),
 });
