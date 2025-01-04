@@ -39,6 +39,10 @@ const {
   addUserPointToFirestore,
   getUserPointsFromFirestore,
   
+  updateClaimedRewardAvailability,
+  updateExistingClaimedRewards,
+  getReportsFromFirestore,
+  updateReportStatus
 } = require('./main/firebase');
 let mainWindow;
 function createWindow() {
@@ -58,8 +62,16 @@ function createWindow() {
   mainWindow.loadFile('renderer/index.html');
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   createWindow();
+  
+  // Update existing records with availability field
+  try {
+    await updateExistingClaimedRewards();
+    console.log('Successfully initialized claimed rewards data');
+  } catch (error) {
+    console.error('Error initializing claimed rewards data:', error);
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -359,4 +371,34 @@ ipcMain.handle('get-UserPoints', async () => {
     console.error('Error fetching Firestore data:', error);
     return { error: 'Failed to fetch data' };
   }
+});
+
+ipcMain.handle('update-claimed-reward-availability', async (event, rewardId, availability) => {
+    try {
+        await updateClaimedRewardAvailability(rewardId, availability);
+        return { success: true };
+    } catch (error) {
+        console.error('Error updating reward availability:', error);
+        return { error: 'Failed to update reward availability' };
+    }
+});
+
+ipcMain.handle('get-reports', async () => {
+    try {
+        const reports = await getReportsFromFirestore();
+        return reports;
+    } catch (error) {
+        console.error('Error fetching reports:', error);
+        return { error: 'Failed to fetch reports' };
+    }
+});
+
+ipcMain.handle('update-report', async (event, reportId, status, adminResponse) => {
+    try {
+        await updateReportStatus(reportId, status, adminResponse);
+        return { success: true };
+    } catch (error) {
+        console.error('Error updating report:', error);
+        return { error: 'Failed to update report' };
+    }
 });

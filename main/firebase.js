@@ -1,5 +1,5 @@
 const { initializeApp } = require('firebase/app');
-const { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, where } = require('firebase/firestore');
+const { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, where, writeBatch } = require('firebase/firestore');
 const { getStorage, ref, uploadBytes, getDownloadURL } = require('firebase/storage');
 const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
 
@@ -318,6 +318,70 @@ async function getUserPointsFromFirestore() {
   }
 }
 
+async function updateClaimedRewardAvailability(rewardId, availability) {
+    try {
+        const rewardRef = doc(db, 'claimedRewards', rewardId);
+        await updateDoc(rewardRef, {
+            availability: availability
+        });
+        console.log(`Successfully updated reward ${rewardId} to ${availability}`);
+    } catch (error) {
+        console.error('Error updating reward availability:', error);
+        throw error;
+    }
+}
+
+// Add this new function to update all existing records
+async function updateExistingClaimedRewards() {
+    try {
+        const claimedRewardsRef = collection(db, 'claimedRewards');
+        const querySnapshot = await getDocs(claimedRewardsRef);
+        
+        // Update each document that doesn't have an availability field
+        const batch = writeBatch(db);
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            if (!data.availability) {
+                const docRef = doc.ref;
+                batch.update(docRef, { availability: 'Pending' });
+            }
+        });
+
+        await batch.commit();
+        console.log('Successfully updated existing claimed rewards');
+    } catch (error) {
+        console.error('Error updating existing claimed rewards:', error);
+        throw error;
+    }
+}
+
+async function getReportsFromFirestore() {
+    try {
+        const reportsRef = collection(db, 'reports');
+        const querySnapshot = await getDocs(reportsRef);
+        return querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+    } catch (error) {
+        console.error('Error fetching reports:', error);
+        throw error;
+    }
+}
+
+async function updateReportStatus(reportId, status, adminResponse) {
+    try {
+        const reportRef = doc(db, 'reports', reportId);
+        await updateDoc(reportRef, {
+            status,
+            adminResponse,
+            updatedAt: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Error updating report:', error);
+        throw error;
+    }
+}
 
 module.exports = {
   getUserCountFromFirestore,
@@ -351,5 +415,12 @@ module.exports = {
   verifyRFID,
 
   addUserPointToFirestore,
-  getUserPointsFromFirestore
+  getUserPointsFromFirestore,
+
+  updateClaimedRewardAvailability,
+
+  updateExistingClaimedRewards,
+
+  getReportsFromFirestore,
+  updateReportStatus,
 };

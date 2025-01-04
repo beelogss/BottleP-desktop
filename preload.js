@@ -34,4 +34,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   storeUserPoints: (user) => ipcRenderer.invoke('store-user-points', user),
   getUserPoints: () => ipcRenderer.invoke('get-UserPoints'),
   onBottleDetected: (callback) => ipcRenderer.on('bottle-detected', callback),
+
+  updateClaimedRewardAvailability: (rewardId, availability) => 
+      ipcRenderer.invoke('update-claimed-reward-availability', rewardId, availability),
+
+  getReports: () => ipcRenderer.invoke('get-reports'),
+  updateReport: (reportId, status, adminResponse) => 
+      ipcRenderer.invoke('update-report', reportId, status, adminResponse),
 });
