@@ -1,6 +1,6 @@
-<!-- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
-<head>0011014511
+<head>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,30 +11,64 @@
 </head>
 <body>
 
-    <form class="form-container" onsubmit="showRFIDModal(event)">
-        <h1>ADMIN</h1>
-        <div class="form-group">
-            <input type="email" id="email" placeholder="Email" required>
-            <label class="form-label" for="email">Email</label>
-        </div>
-        <div class="form-group">
-            <input type="password" id="password-input" placeholder="Password">
-            <label class="form-label" id="password-label" for="password-input">Password</label>
-            <i class="fas fa-eye-slash" id="password-toggle"></i>
-        </div>
-        <p id="error-message" class="error-message"></p>
-        <div class="form-group">
-            <input type="submit" value="Login" class="login-button">
-        </div>
-    </form>
+    <div class="container">
+        <form class="form-container" onsubmit="showRFIDModal(event)">
+            <div class="logo-container">
+                <img src="assets/logo.png" alt="BottlePoints" class="logo">
+                <h2 class="brand-name">
+                    <span class="brand-bottle">Bottle</span>
+                    <span class="brand-points">Points</span>
+                </h2>
+            </div>
+            <h1>ADMIN LOGIN</h1>
+            <div class="form-group">
+                <input type="email" id="email" placeholder=" " required>
+                <label class="form-label">Email Address</label>
+            </div>
+            <div class="form-group">
+                <input type="password" id="password-input" placeholder=" " required>
+                <label class="form-label">Password</label>
+                <i class="fas fa-eye-slash" id="password-toggle"></i>
+            </div>
+            <div id="error-message" class="error-message"></div>
+            <button type="submit" class="login-button">
+                Login <i class="fas fa-arrow-right"></i>
+            </button>
+        </form>
+    </div>
 
     <div id="rfid-modal" class="modal">
         <div class="modal-content">
-            <span class="close" id="close-modal">&times;</span>
-            <h2>Scan your RFID</h2>
-            <p>Please scan your RFID card to complete login.</p>
-            <p id="rfid-error-message" class="error-message"></p>
-            <div class="loading" id="loading">Verifying...</div>
+            <div class="modal-header">
+                <h2>Scan RFID Card</h2>
+                <button class="close-modal" id="close-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="rfid-icon">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                <p class="scan-text">Please tap your RFID card to complete login</p>
+                <div class="verification-status verification-success">
+                    <div class="status-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <p>Verification successful!</p>
+                </div>
+                
+                <div class="verification-status verification-failed">
+                    <div class="status-icon">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <p>Verification failed. Please try again.</p>
+                </div>
+                <div class="loading-wrapper">
+                    <div class="loading"></div>
+                    <span class="loading-text">Waiting for card...</span>
+                </div>
+                <div id="rfid-error-message" class="error-message"></div>
+            </div>
         </div>
     </div>
 
@@ -93,32 +127,65 @@
         }
     
         // RFID scan event listener
-        document.addEventListener('keydown', async (event) => {
-            if (rfidModal.style.display === 'flex') {
-                if (event.key === 'Enter') {
-                    loading.style.display = 'block';
-                    const verifyResponse = await window.electronAPI.verifyRFID(scannedRFIDCode);
-                    loading.style.display = 'none';
-    
-                    if (verifyResponse.success) {
-                        localStorage.setItem('authenticated', 'true');
-                        window.location.href = 'dashboard.html';
-                    } else {
-                        // Show a persistent error message for invalid RFID
-                        showRFIDError('Invalid RFID code. Please try scanning again.');
-                    }
-                    scannedRFIDCode = ''; // Reset the code after verification
-                } else {
-                    scannedRFIDCode += event.key; // Build the RFID code
-                }
+       /* filepath: /c:/Users/bilog's workspace/Desktop/bpDesktop-app/renderer/index.html */
+       document.addEventListener('keydown', async (event) => {
+    if (rfidModal.style.display === 'flex') {
+        // Prevent default to stop inputs from being filled
+        event.preventDefault();
+        
+        // Only accept alphanumeric characters for RFID
+        if (/^[a-zA-Z0-9]$/.test(event.key)) {
+            document.querySelector('.loading-text').textContent = 'Verifying...';
+            document.querySelector('.rfid-icon').style.display = 'none';
+            document.querySelector('.scan-text').style.display = 'none';
+            document.querySelector('.loading-wrapper').style.display = 'flex';
+            
+            scannedRFIDCode += event.key;
+        }
+        
+        if (event.key === 'Enter') {
+            const verifyResponse = await window.electronAPI.verifyRFID(scannedRFIDCode);
+            
+            if (verifyResponse.success) {
+                document.querySelector('.loading-wrapper').style.display = 'none';
+                document.querySelector('.verification-status.verification-success').style.display = 'block';
+                setTimeout(() => {
+                    localStorage.setItem('authenticated', 'true');
+                    window.location.href = 'dashboard.html';
+                }, 1500);
+            } else {
+                document.querySelector('.loading-wrapper').style.display = 'none';
+                document.querySelector('.verification-status.verification-failed').style.display = 'block';
+                setTimeout(() => {
+                    resetRFIDModal();
+                }, 2000);
             }
-        });
+            scannedRFIDCode = '';
+        }
+    }
+});
+
+// Add helper function to reset modal state
+function resetRFIDModal() {
+    document.querySelector('.verification-status.verification-failed').style.display = 'none';
+    document.querySelector('.loading-wrapper').style.display = 'flex';
+    document.querySelector('.loading-text').textContent = 'Waiting for card...';
+    document.querySelector('.rfid-icon').style.display = 'block';
+    document.querySelector('.scan-text').style.display = 'block';
+    scannedRFIDCode = '';
+}
+
+// Add modal close handler
+closeModal.addEventListener('click', () => {
+    rfidModal.style.display = 'none';
+    resetRFIDModal();
+});
     </script>
     
 </body>
-</html> -->
+</html>
 
- <!DOCTYPE html>
+ <!-- <!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -186,4 +253,4 @@
     </script>
 </body>
 
-</html>
+</html> -->

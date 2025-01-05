@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Scan</title>
+    <link rel="stylesheet" href="assets/studentscan.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="scan-container">
+        <div class="scan-header">
+            <h1>Bottle Scanning Station</h1>
+            <div class="progress-container">
+                <p id="progress-description">Bottle Disposal Progress</p>
+                <div class="progress-circle" id="progress-circle">
+                    <span id="progress-text">0%</span>
+                </div>
+                <p id="progress-descriptions">Total Weight: 0g / 20000g</p>
+            </div>
+        </div>
+
+        <div class="scan-content">
+            <div class="user-section">
+                <h2>User Information</h2>
+                <img id="userAvatar" src="assets/images/default-profile.png" alt="User Avatar" class="avatar">
+                <div class="user-details">
+                    <p>Name: <span id="userName"></span></p>
+                    <p>Student Number: <span id="userStudentNumber"></span></p>
+                </div>
+                <button id="start-scan-user" class="styled-button">Scan Student QR</button>
+            </div>
+
+            <div class="bottle-section">
+                <h2>Bottle Information</h2>
+                <div class="bottle-table-container">
+                    <table id="bottleTable">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Brand Name</th>
+                                <th>Size</th>
+                                <th>Points</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3"><strong>Total Points:</strong></td>
+                                <td id="totalPoints">0</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="button-container">
+                    <button id="start-scan-bottle" class="styled-button disabled-button" disabled>Scan Bottle</button>
+                    <button id="confirm-scan-bottle" class="styled-button" style="display: none;">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
