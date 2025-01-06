@@ -42,7 +42,10 @@ const {
   updateClaimedRewardAvailability,
   updateExistingClaimedRewards,
   getReportsFromFirestore,
-  updateReportStatus
+  updateReportStatus,
+
+  calculateTotalRevenue,
+  getBottleTransactions,
 } = require('./main/firebase');
 let mainWindow;
 function createWindow() {
@@ -59,7 +62,7 @@ function createWindow() {
     minHeight: 660
   });
 
-  mainWindow.loadFile('renderer/index.html');
+  mainWindow.loadFile('renderer/scan.html');
 }
 
 app.whenReady().then(async () => {
@@ -96,9 +99,9 @@ SerialPort.list().then(ports => {
 });
 
 // Set up serial communication with ESP32
-const port = new SerialPort({ path: 'COM3', baudRate: 9600 }, (err) => {
+const port = new SerialPort({ path: 'COM5', baudRate: 115200 }, (err) => {
   if (err) {
-    return console.error('Error opening COM3:', err.message);
+    return console.error('Error opening COM5:', err.message);
   }
 });
 
@@ -106,7 +109,7 @@ const parser = port.pipe(new ReadlineParser({ delimiter: '\r\n' }));
 
 parser.on('data', (data) => {
   console.log('Data received from ESP32:', data);
-  if (data.includes('bottle_detected') && mainWindow) {
+  if (data.includes('BOTTLE_DETECTED') && mainWindow) {
     console.log('Bottle detection confirmed, sending to renderer');
     try {
       mainWindow.webContents.send('bottle-detected');
@@ -263,23 +266,25 @@ ipcMain.handle('add-pet-bottle', async (event, petBottle) => {
 });
 
 ipcMain.handle('get-pet-bottles', async () => {
-  try {
-    const petBottles = await getPetBottlesFromFirestore();
-    return petBottles;
-  } catch (error) {
-    console.error('Error fetching pet bottles:', error);
-    return { error: 'Failed to fetch pet bottles' };
-  }
+    try {
+        console.log('Fetching pet bottles...'); // Debug log
+        const bottles = await getPetBottlesFromFirestore();
+        console.log('Found bottles:', bottles); // Debug log
+        return bottles;
+    } catch (error) {
+        console.error('Error getting bottles:', error);
+        throw error;
+    }
 });
 
-ipcMain.handle('edit-pet-bottle', async (event, petBottleId, brandName, size, sizeUnit, weight, weightUnit, barcodeNumber) => {
-  try {
-    await editPetBottleInFirestore(petBottleId, brandName, size, sizeUnit, weight, weightUnit, barcodeNumber);
-    return { success: true };
-  } catch (error) {
-    console.error('Error editing pet bottle:', error);
-    return { success: false, error: error.message };
-  }
+ipcMain.handle('edit-pet-bottle', async (event, petBottleId, brandName, size, sizeUnit, weight, weightUnit, barcodeNumber, points) => {
+    try {
+        await editPetBottleInFirestore(petBottleId, brandName, size, sizeUnit, weight, weightUnit, barcodeNumber, points);
+        return { success: true };
+    } catch (error) {
+        console.error('Error editing pet bottle:', error);
+        return { success: false, error: error.message };
+    }
 });
 
 ipcMain.handle('delete-pet-bottle', async (event, id) => {
@@ -400,5 +405,25 @@ ipcMain.handle('update-report', async (event, reportId, status, adminResponse) =
     } catch (error) {
         console.error('Error updating report:', error);
         return { error: 'Failed to update report' };
+    }
+});
+
+ipcMain.handle('calculate-total-revenue', async () => {
+    try {
+        const revenue = await calculateTotalRevenue();
+        return revenue;
+    } catch (error) {
+        console.error('Error calculating revenue:', error);
+        throw error;
+    }
+});
+
+ipcMain.handle('get-bottle-transactions', async () => {
+    try {
+        const transactions = await getBottleTransactions();
+        return transactions;
+    } catch (error) {
+        console.error('Error getting bottle transactions:', error);
+        throw error;
     }
 });

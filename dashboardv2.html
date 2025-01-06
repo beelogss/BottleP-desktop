@@ -80,47 +80,230 @@
                     dynamicCss.href = 'assets/style.css';
                     document.getElementById('dashboard-link').classList.add('active');
                     content.innerHTML = `
-                <div class="grid-container">
-                    <div class="grid-item box1" id="user-count-container">
-                        <div class="user-count-text" id="user-count-text">Total Users:</div>
-                        <div class="user-count-number" id="user-count">Loading...</div>
-                    </div>
-                    <div class="grid-item box2" id="claimed-rewards-container">
-                        <div class="claimed-rewards-text" id="claimed-rewards-text">Total Claimed Rewards:</div>
-                        <div class="claimed-rewards-number" id="claimed-rewards-count">Loading...</div>
-                    </div>
-                    <div class="grid-item box3" id="bottle-contribution-container">
-                        <div class="bottle-contribution-text" id="bottle-count-text">Total Bottle Contribution:</div>
-                        <div class="bottle-contribution-number" id="bottle-count">Loading...</div>
-                    </div>
-                    <div class="grid-item full">
-                        <table id="userTable">
-                            <thead>
-                                <tr>
-                                    <th>Rank Number</th>
-                                    <th>Student Number</th>
-                                    <th>Full Name</th>
-                                    <th>Bottle Contribution</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="grid-item wide">
-                        <div class="progress-container">
-                            <p id="progress-description">Bottle Disposal Progress</p>
-                            <div class="progress-circle" id="progress-circle">
-                                <span id="progress-text">0%</span>
+                <div class="analytics-container">
+                    <!-- Revenue Chart Section -->
+                    <div class="chart-card revenue-chart-container">
+                        <h3>Revenue Over Time</h3>
+                        <div class="chart-header">
+                            <div class="chart-legend">
+                                <span class="legend-item">
+                                    <span class="dot revenue-dot"></span>
+                                    Total Revenue
+                                </span>
+                                <span class="legend-item">
+                                    <span class="dot target-dot"></span>
+                                    Target Revenue
+                                </span>
                             </div>
-                            <p id="progress-descriptions">Total Weight: 0g / 20000g</p>
+                            <select id="revenue-timeframe">
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                                <option value="year">This Year</option>
+                            </select>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Grid -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-coins"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4>Total Revenue</h4>
+                                <p class="stat-value" id="total-revenue">₱0.00</p>
+                                <p class="stat-change positive">+5.5% from last month</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-bottle-water"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4>Total Bottles</h4>
+                                <p class="stat-value" id="total-bottles">0</p>
+                                <p class="stat-change positive">+3.2% from last month</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-scale-balanced"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h4>Total Weight</h4>
+                                <p class="stat-value" id="total-weight">0g</p>
+                                <p class="stat-change positive">+4.1% from last month</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Distribution Charts -->
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3>Bottle Collection by Day</h3>
+                            <div class="chart-wrapper">
+                                <canvas id="bottleDistributionChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Top Contributors</h3>
+                            <div class="chart-wrapper">
+                                <canvas id="contributorsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Section -->
+                    <div class="progress-section">
+                        <div class="progress-card">
+                            <h3>Bottle Collection Progress</h3>
+                            <div class="progress-container">
+                                <div class="progress-circle" id="progress-circle">
+                                    <span id="progress-text">0%</span>
+                                </div>
+                                <p id="progress-description">Total Weight: 0g / 20000g</p>
+                            </div>
                         </div>
                     </div>
                 </div>`;
-                    displayUserCount();
-                    displayClaimedRewardsCount();
-                    displayBottleCount();
-                    fetchData();
+
+                    // Add styles with fixed dimensions
+                    const dashboardStyles = document.createElement('style');
+                    dashboardStyles.textContent = `
+                        .analytics-container {
+                            padding: 20px;
+                            gap: 20px;
+                            max-width: 100%;
+                            overflow-x: hidden;
+                        }
+
+                        .chart-card {
+                            background: white;
+                            border-radius: 12px;
+                            padding: 20px;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                            margin-bottom: 20px;
+                        }
+
+                        .revenue-chart-container {
+                            height: 500px; /* Fixed container height */
+                        }
+
+                        .chart-wrapper {
+                            position: relative;
+                            height: 350px; /* Fixed chart height */
+                            width: 100%;
+                        }
+
+                        .chart-header {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            margin-bottom: 15px;
+                            height: 40px; /* Fixed header height */
+                        }
+
+                        .chart-legend {
+                            display: flex;
+                            gap: 15px;
+                        }
+
+                        .legend-item {
+                            display: flex;
+                            align-items: center;
+                            gap: 5px;
+                        }
+
+                        .dot {
+                            width: 10px;
+                            height: 10px;
+                            border-radius: 50%;
+                        }
+
+                        .revenue-dot {
+                            background-color: #7a9b57;
+                        }
+
+                        .target-dot {
+                            background-color: #ffa726;
+                        }
+
+                        .stats-grid {
+                            display: grid;
+                            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                            gap: 20px;
+                            margin-bottom: 20px;
+                        }
+
+                        .stat-card {
+                            background: white;
+                            border-radius: 12px;
+                            padding: 20px;
+                            display: flex;
+                            align-items: center;
+                            gap: 15px;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        }
+
+                        .stat-icon {
+                            width: 50px;
+                            height: 50px;
+                            border-radius: 10px;
+                            background: #7a9b57;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            color: white;
+                            font-size: 1.5em;
+                        }
+
+                        .stat-info h4 {
+                            margin: 0;
+                            color: #666;
+                        }
+
+                        .stat-value {
+                            font-size: 1.5em;
+                            font-weight: bold;
+                            margin: 5px 0;
+                        }
+
+                        .stat-change {
+                            font-size: 0.9em;
+                            margin: 0;
+                        }
+
+                        .stat-change.positive {
+                            color: #4caf50;
+                        }
+
+                        .charts-grid {
+                            display: grid;
+                            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+                            gap: 20px;
+                            margin-bottom: 20px;
+                        }
+
+                        .progress-section {
+                            display: grid;
+                            grid-template-columns: 1fr;
+                            gap: 20px;
+                        }
+
+                        .progress-card {
+                            background: white;
+                            border-radius: 12px;
+                            padding: 20px;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        }
+                    `;
+                    document.head.appendChild(dashboardStyles);
+
+                    // Initialize charts with fixed dimensions
+                    initializeDashboardCharts();
                     break;
                 case 'manage-user':
                     dynamicCss.href = 'assets/style.css';
@@ -261,7 +444,7 @@
                                     </div>
                                     <div class="form-section">
                                         <label for="editBrand">Brand Name:</label>
-                                        <input type="text" id="editBrand" class="modal-input" placeholder="Enter brand name">
+                                        <input type="text" id="editBrand" class="modal-input">
                                         <label for="editsize">Size:</label>
                                         <div class="editsizeinput">
                                             <input type="number" id="editsize" class="modal-input" placeholder="Enter size">
@@ -281,7 +464,7 @@
                                             </select>
                                         </div>
                                         <label for="editBarcode">Barcode:</label>
-                                        <input type="number" id="editBarcode" class="modal-input" placeholder="Enter ">
+                                        <input type="number" id="editBarcode" class="modal-input">
                                         <label for="editPoints">Points:</label>
                                         <input type="number" id="editPoints" class="modal-input" placeholder="Enter points">
                                         <button id="saveEdit" class="modal-save-button">Save Changes</button>
@@ -930,117 +1113,32 @@
             const editPoints = document.getElementById('editPoints');
             const saveEdit = document.getElementById('saveEdit');
 
-            // Function to reset modal
-            function resetModal() {
-                editImage.src = '';
-                editName.value = '';
-                editStock.value = '';
-                editPoints.value = '';
-                editModal.style.display = 'none';
-            }
-
-            // Close modal function
-            function closeModal() {
-                resetModal();
-            }
-
-            // Add event listener for close button
-            closeEditModal.onclick = closeModal;
-
-            // Add event listener for clicking outside the modal
-            window.onclick = function(event) {
-                if (event.target == editModal) {
-                    closeModal();
-                }
-            };
-
-            // Update the openEditModal function
-            window.openEditModal = function(id, name, stock, points, imageUrl) {
-                editImage.src = imageUrl;
-                editName.value = name;
-                editStock.value = stock;
-                editPoints.value = points;
-                editModal.style.display = 'block';
-
-                // Remove any existing event listener from saveEdit button
-                saveEdit.onclick = null;
-
-                // Add new event listener
-                saveEdit.onclick = async function() {
-                    if (!validateRewardInput()) {
-                        return;
-                    }
-                    try {
-                        const updatedReward = {
-                            reward_name: editName.value.trim(),
-                            stock: parseInt(editStock.value),
-                            points: parseInt(editPoints.value)
-                        };
-                        
-                        const result = await window.electronAPI.editReward(
-                            id, 
-                            updatedReward.reward_name, 
-                            updatedReward.stock, 
-                            updatedReward.points
-                        );
-                        
-                        if (result.success) {
-                            alert('Reward updated successfully');
-                            closeModal(); // Use the closeModal function
-                            fetchRewards(); // Refresh the rewards list
-                        } else {
-                            throw new Error(result.error || 'Failed to update reward');
-                        }
-                    } catch (error) {
-                        console.error('Error updating reward:', error);
-                        alert('Failed to update reward: ' + error.message);
-                    }
-                };
-            };
-
-            function validateRewardInput() {
-                const name = editName.value.trim();
-                const stock = parseInt(editStock.value);
-                const points = parseInt(editPoints.value);
-
-                if (!name) {
-                    alert('Reward name cannot be empty');
-                    return false;
-                }
-                if (isNaN(stock) || stock < 0) {
-                    alert('Stock must be a valid positive number');
-                    return false;
-                }
-                if (isNaN(points) || points < 0) {
-                    alert('Points must be a valid positive number');
-                    return false;
-                }
-                return true;
-            }
-
             // Function to fetch and display rewards
             async function fetchRewards() {
                 try {
-                    const rewards = await window.electronAPI.getRewards();
+                    const rewards = await window.electronAPI.getRewards(); // Get rewards from Firebase via Electron API
                     console.log('Rewards received:', rewards);
+                    // Clear previous content
                     rewardsContainer.innerHTML = '';
 
+                    // Loop through the rewards and display each one
                     rewards.forEach(reward => {
                         const rewardElement = document.createElement('div');
                         rewardElement.classList.add('reward-item');
 
+                        // Display reward image, name, stock, and action buttons
                         rewardElement.innerHTML = `
-                            <div class="reward-image">
-                                <img src="${reward.image_url}" alt="${reward.reward_name}" />
-                            </div>
-                            <div class="reward-details">
-                                <h3>${reward.reward_name}</h3>
-                                <p>Stock: ${reward.stock}</p>
-                                <p>Points: ${reward.points}</p>
-                                <button class="edit-button" onclick="openEditModal('${reward.id}', '${reward.reward_name}', ${reward.stock}, ${reward.points}, '${reward.image_url}')">Edit</button>
-                                <button class="delete-button" onclick="deleteReward('${reward.id}')">Delete</button>
-                            </div>
-                        `;
+                        <div class="reward-image">
+                            <img src="${reward.image_url}" alt="${reward.reward_name}" />
+                        </div>
+                        <div class="reward-details">
+                            <h3>${reward.reward_name}</h3>
+                            <p>Stock: ${reward.stock}</p>
+                            <p>Points: ${reward.points}</p>
+                            <button class="edit-button" onclick="openEditModal('${reward.id}', '${reward.reward_name}', ${reward.stock}, ${reward.points}, '${reward.image_url}')">Edit</button>
+                            <button class="delete-button" onclick="deleteReward('${reward.id}')">Delete</button>
+                        </div>
+                    `;
 
                         rewardsContainer.appendChild(rewardElement);
                     });
@@ -1050,18 +1148,47 @@
                 }
             }
 
-            // Delete reward function
-            window.deleteReward = async function(id) {
-                if (confirm('Are you sure you want to delete this reward?')) {
+            // Function to open the edit modal
+            window.openEditModal = function (id, name, stock, points, imageUrl) {
+                editImage.src = imageUrl;
+                editName.value = name;
+                editStock.value = stock;
+                editPoints.value = points;
+                editModal.style.display = 'block';
+
+                saveEdit.onclick = async function () {
                     try {
-                        await window.electronAPI.deleteReward(id);
-                        alert('Reward deleted successfully');
-                        fetchRewards();
+                        await window.electronAPI.updateReward(id, {
+                            reward_name: editName.value,
+                            stock: editStock.value,
+                            points: editPoints.value,
+                            image_url: imageUrl
+                        });
+                        alert('Reward updated successfully');
+                        editModal.style.display = 'none';
+                        fetchRewards(); // Refresh the rewards list
                     } catch (error) {
-                        console.error('Error deleting reward:', error);
-                        alert('Failed to delete reward.');
+                        console.error('Error updating reward:', error);
+                        alert('Failed to update reward.');
                     }
+                };
+            };
+
+            // Function to delete a reward
+            window.deleteReward = async function (id) {
+                try {
+                    await window.electronAPI.deleteReward(id);
+                    alert('Reward deleted successfully');
+                    fetchRewards(); // Refresh the rewards list
+                } catch (error) {
+                    console.error('Error deleting reward:', error);
+                    alert('Failed to delete reward.');
                 }
+            };
+
+            // Close the edit modal
+            closeEditModal.onclick = function () {
+                editModal.style.display = 'none';
             };
 
             // Fetch rewards on initialization
@@ -1131,10 +1258,11 @@
                 editWeight.value = weight;
                 editWeightUnit.value = weight_unit;
                 editBarcode.value = barcode;
-                editPoints.value = points; // Make sure this line is present
+                editPoints.value = points;
                 editImage.src = imageUrl;
                 editModal.style.display = 'block';
 
+                // Link saveEdit function to the save button
                 saveEdit.onclick = () => saveEditBottle(id);
             };
 
@@ -1146,21 +1274,12 @@
                 const weight = editWeight.value;
                 const weight_unit = editWeightUnit.value;
                 const barcode = editBarcode.value;
-                const points = editPoints.value; // Make sure this is included
+                const points = editPoints.value;
 
                 try {
-                    await window.electronAPI.editPetBottle(
-                        id, 
-                        brand_name, 
-                        size, 
-                        size_unit, 
-                        weight, 
-                        weight_unit, 
-                        barcode,
-                        points // Add points parameter
-                    );
-                    editModal.style.display = 'none';
-                    fetchBottles();
+                    await window.electronAPI.editPetBottle(id, brand_name, size, size_unit, weight, weight_unit, barcode, points);
+                    editModal.style.display = 'none'; // Close modal
+                    fetchBottles(); // Refresh the bottles list to reflect the updated data
                 } catch (error) {
                     console.error('Error saving bottle:', error);
                     statusDiv.innerText = 'Failed to save bottle';
@@ -2038,6 +2157,237 @@
                 console.error('Error exporting to Excel:', error);
                 alert('Error exporting to Excel. Please try again.');
             }
+        }
+
+        async function initializeDashboardCharts() {
+            try {
+                // Fetch all necessary data
+                const transactions = await window.electronAPI.getBottleTransactions();
+                const totalRevenue = await window.electronAPI.calculateTotalRevenue();
+                const totalBottles = await window.electronAPI.getTotalBottleCount();
+                const totalWeight = await window.electronAPI.getTotalBottleWeight();
+
+                // Update statistics
+                document.getElementById('total-revenue').textContent = `₱${totalRevenue.toFixed(2)}`;
+                document.getElementById('total-bottles').textContent = totalBottles;
+                document.getElementById('total-weight').textContent = `${totalWeight}g`;
+
+                // Initialize Revenue Chart with fixed dimensions
+                const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+                const revenueData = processRevenueData(transactions);
+                
+                new Chart(revenueCtx, {
+                    type: 'line',
+                    data: {
+                        labels: revenueData.labels,
+                        datasets: [
+                            {
+                                label: 'Revenue',
+                                data: revenueData.revenue,
+                                borderColor: '#7a9b57',
+                                backgroundColor: 'rgba(122, 155, 87, 0.1)',
+                                tension: 0.4,
+                                fill: true,
+                                pointBackgroundColor: '#7a9b57',
+                                pointRadius: 4,
+                                pointHoverRadius: 6
+                            },
+                            {
+                                label: 'Target',
+                                data: revenueData.target,
+                                borderColor: '#ffa726',
+                                backgroundColor: 'rgba(255, 167, 38, 0.1)',
+                                tension: 0.4,
+                                fill: true,
+                                pointBackgroundColor: '#ffa726',
+                                pointRadius: 4,
+                                pointHoverRadius: 6
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true, // Changed to true
+                        height: 350, // Fixed height
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                titleColor: '#333',
+                                bodyColor: '#666',
+                                borderColor: '#ddd',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ₱${context.parsed.y.toFixed(2)}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 12
+                                    },
+                                    callback: function(value) {
+                                        return '₱' + value.toFixed(2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Initialize Bottle Distribution Chart
+                const bottleCtx = document.getElementById('bottleDistributionChart').getContext('2d');
+                const bottleData = processBottleData(transactions);
+                new Chart(bottleCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: bottleData.labels,
+                        datasets: [{
+                            label: 'Bottles Collected',
+                            data: bottleData.data,
+                            backgroundColor: '#7a9b57'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Initialize Contributors Chart
+                const contributorsCtx = document.getElementById('contributorsChart').getContext('2d');
+                const contributorsData = processContributorsData(transactions);
+                new Chart(contributorsCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: contributorsData.labels,
+                        datasets: [{
+                            data: contributorsData.data,
+                            backgroundColor: ['#7a9b57', '#ffa726', '#42a5f5', '#ef5350', '#66bb6a']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+
+                // Update progress circle
+                updateProgressCircle(totalWeight);
+            } catch (error) {
+                console.error('Error initializing dashboard charts:', error);
+            }
+        }
+
+        function processRevenueData(transactions) {
+            // Group transactions by date and calculate daily revenue
+            const dailyRevenue = {};
+            const dailyTarget = {};
+            
+            // Set target revenue (you can adjust this value)
+            const targetPerDay = 1000; // ₱1000 per day
+
+            transactions.forEach(transaction => {
+                const date = new Date(transaction.date).toISOString().split('T')[0];
+                if (!dailyRevenue[date]) {
+                    dailyRevenue[date] = 0;
+                }
+                dailyRevenue[date] += transaction.amount || 0;
+                dailyTarget[date] = targetPerDay;
+            });
+
+            // Get last 7 days
+            const dates = [];
+            const revenue = [];
+            const target = [];
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                const formattedDate = date.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                
+                dates.push(formattedDate);
+                revenue.push(dailyRevenue[dateStr] || 0);
+                target.push(targetPerDay);
+            }
+
+            return {
+                labels: dates,
+                revenue: revenue,
+                target: target
+            };
+        }
+
+        function processBottleData(transactions) {
+            // Process transactions to get bottle collection data
+            // Return formatted data for the chart
+            return {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                data: [65, 59, 80, 81, 56, 55, 40]
+            };
+        }
+
+        function processContributorsData(transactions) {
+            // Process transactions to get top contributors
+            // Return formatted data for the chart
+            return {
+                labels: ['User A', 'User B', 'User C', 'User D', 'Others'],
+                data: [30, 25, 20, 15, 10]
+            };
+        }
+
+        function updateProgressCircle(totalWeight) {
+            const target = 20000; // 20kg in grams
+            const progress = (totalWeight / target) * 100;
+            const progressText = document.getElementById('progress-text');
+            const progressDescription = document.getElementById('progress-description');
+            
+            progressText.textContent = `${Math.min(100, progress.toFixed(1))}%`;
+            progressDescription.textContent = `Total Weight: ${totalWeight}g / ${target}g`;
         }
     </script>
 </body>

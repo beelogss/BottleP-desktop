@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bottle Scan</title>
+    <link rel="stylesheet" href="assets/scan.css">
+    <script src="https://kit.fontawesome.com/3980f875bb.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        .admin-access {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            opacity: 0.1;
+            transition: opacity 0.3s;
+        }
+
+        .admin-access:hover {
+            opacity: 0.3;
+        }
+
+        /* Add this for the modal */
+        .admin-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .admin-modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .admin-modal input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .admin-modal button {
+            width: 100%;
+            padding: 10px;
+            background: #455e14;
+            color: white;
+            border: none;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .admin-modal button:hover {
+            background: #5c7e1c;
+        }
+
+        /* Add these styles */
+        .qr-prompt {
+            text-align: center;
+            padding: 2rem;
+            color: #455e14;
+        }
+
+        .qr-prompt i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #83951c;
+        }
+
+        .qr-prompt p {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: #666;
+        }
+
+        .scanning-animation {
+            width: 150px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #83951c, transparent);
+            margin: 1rem auto;
+            animation: scanning 2s infinite;
+        }
+
+        @keyframes scanning {
+            0% {
+                transform: translateX(-75px);
+            }
+            100% {
+                transform: translateX(75px);
+            }
+        }
+
+        /* Update existing user-info styles */
+        .user-info {
+            background: linear-gradient(to bottom, rgba(131, 149, 28, 0.05), rgba(69, 94, 20, 0.05));
+            border-radius: 15px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .user-details {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="scan-container">
+            <div class="header">
+                <h1><i class="fa-solid fa-qrcode"></i> Bottle Scan</h1>
+            </div>
+
+            <div class="scan-sections">
+                <!-- User Section -->
+                <div class="scan-section">
+                    <h2>User Information</h2>
+                    <div class="user-info" id="userInfoSection">
+                        <!-- Initial state - QR scanning prompt -->
+                        <div class="qr-prompt" id="qrPrompt">
+                            <i class="fas fa-qr-code"></i>
+                            <p>Please scan your QR code using the barcode scanner</p>
+                            <div class="scanning-animation"></div>
+                        </div>
+                        
+                        <!-- User info will be shown here after successful scan -->
+                        <div class="user-details" id="userDetails" style="display: none;">
+                            <img id="userAvatar" src="assets/images/default-profile.png" alt="User Avatar">
+                            <p id="userName"></p>
+                            <p id="userStudentNumber"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottle Section -->
+                <div class="scan-section bottle-section">
+                    <h2>Bottle Information</h2>
+                    <div class="bottle-info">
+                        <table id="bottleTable">
+                            <thead>
+                                <tr>
+                                    <th>No.</th>
+                                    <th>Brand Name</th>
+                                    <th>Size</th>
+                                    <th>Points</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Bottles will be added here -->
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3">Total Points:</td>
+                                    <td id="totalPoints">0</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="admin-access" onclick="showAdminPrompt()"></button>
+        <i class="fas fa-shield-alt"></i>
+    </button>
+
+    <!-- Admin access modal -->
+    <div id="adminModal" class="admin-modal">
+        <div class="admin-modal-content">
+            <h3>Admin Access</h3>
+            <input type="password" id="adminKey" placeholder="Enter admin key">
+            <button onclick="verifyAdminAccess()">Access Admin Panel</button>
+        </div>
+    </div>
+
+
+    <script>
+    // Constants for timeouts
+    const USER_TIMEOUT = 30000; // 30 seconds for user inactivity
+    const BOTTLE_DETECTION_TIMEOUT = 15000; // 15 seconds to wait for bottle detection
+
+    // State variables
+    let barcodeInput = '';
+    let isScanningUser = false;
+    let isScanningBottle = false;
+    let bottleScanned = false;
+    let bottleDetected = false;
+    let currentUserId = null;
+    let userInactivityTimer;
+    let bottleDetectionTimer;
+
+    // Helper function for countdown alert
+    function showCountdownAlert(title, text) {
+        let timerInterval;
+        return Swal.fire({
+            title: title,
+            html: `${text}<br><br>This process will restart in <b>5</b> seconds`,
+            icon: 'warning',
+            timer: 5000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                const content = Swal.getHtmlContainer();
+                const b = content.querySelector('b');
+                timerInterval = setInterval(() => {
+                    b.textContent = Math.ceil(Swal.getTimerLeft() / 1000);
+                }, 100);
+            },
+            willClose: () => {
+                clearInterval(timerInterval);
+            }
+        });
+    }
+
+    // Complete reset of all states and UI
+    function resetModalState() {
+        // Clear timers
+        clearTimeout(userInactivityTimer);
+        clearTimeout(bottleDetectionTimer);
+        
+        // Reset UI elements
+        document.getElementById('qrPrompt').style.display = 'block';
+        document.getElementById('userDetails').style.display = 'none';
+        document.getElementById('userName').textContent = '';
+        document.getElementById('userStudentNumber').textContent = '';
+        document.getElementById('userAvatar').src = 'assets/images/default-profile.png';
+        document.querySelector('#bottleTable tbody').innerHTML = '';
+        document.getElementById('totalPoints').textContent = '0';
+        
+        // Reset all state variables
+        barcodeInput = '';
+        isScanningUser = false;
+        isScanningBottle = false;
+        bottleScanned = false;
+        bottleDetected = false;
+        currentUserId = null;
+        
+        // Ensure scan bottle button is disabled
+        const scanBottleButton = document.getElementById('start-scan-bottle');
+        if (scanBottleButton) {
+            scanBottleButton.disabled = true;
+        }
+    }
+
+    // Show bottle waiting alert
+    function showBottleWaitingAlert() {
+        Swal.fire({
+            title: 'Waiting for bottle...',
+            text: 'Please place the bottle in the bin',
+            icon: 'info',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            timer: BOTTLE_DETECTION_TIMEOUT,
+            timerProgressBar: true,
+            didOpen: () => {
+                Swal.showLoading();
+                startBottleDetectionTimer();
+            },
+            willClose: () => {
+                if (!bottleDetected) {
+                    Swal.fire({
+                        title: 'Timeout',
+                        text: 'Bottle not detected within time limit',
+                        icon: 'warning',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        showCountdownAlert(
+                            'Process Restarting',
+                            'No bottle detected'
+                        ).then(() => {
+                            resetModalState();
+                        });
+                    });
+                }
+            }
+        });
+    }
+
+    // Main scanning listener
+    document.addEventListener('keypress', async (event) => {
+        // Skip if we're in admin modal
+        if (document.getElementById('adminModal')?.style.display === 'flex') {
+            return;
+        }
+
+        // Collect input
+        if (event.key !== 'Enter') {
+            barcodeInput += event.key;
+            return;
+        }
+
+        // Process when Enter is pressed
+        if (barcodeInput.length > 0) {
+            if (isScanningBottle) {
+                // Process bottle scan
+                await addBottleInfo(barcodeInput);
+            } else {
+                // Process user QR scan
+                try {
+                    const users = await window.electronAPI.getData();
+                    const user = users.find(u => 
+                        u.studentNumber === barcodeInput || 
+                        u.qrCode === barcodeInput || 
+                        u.id === barcodeInput
+                    );
+
+                    if (user) {
+                        // Hide QR prompt
+                        document.getElementById('qrPrompt').style.display = 'none';
+                        // Show and update user info
+                        const userDetails = document.getElementById('userDetails');
+                        userDetails.style.display = 'block';
+                        document.getElementById('userName').textContent = user.name;
+                        document.getElementById('userStudentNumber').textContent = user.studentNumber;
+                        document.getElementById('userAvatar').src = user.avatar || 'assets/images/default-profile.png';
+                        currentUserId = user.id;
+
+                        // Enable bottle scanning
+                        isScanningBottle = true;
+                        
+                        // Show ready to scan bottle message with timer
+                        Swal.fire({
+                            title: 'Ready',
+                            text: 'Please scan bottle',
+                            icon: 'info',
+                            showConfirmButton: false,
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            timer: USER_TIMEOUT,
+                            timerProgressBar: true,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            },
+                            willClose: () => {
+                                if (!bottleScanned) {
+                                    Swal.fire({
+                                        title: 'Session Expired',
+                                        text: 'No bottle scanned within the time limit',
+                                        icon: 'warning',
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    }).then(() => {
+                                        showCountdownAlert(
+                                            'Process Restarting',
+                                            'No activity detected'
+                                        ).then(() => {
+                                            resetModalState();
+                                        });
+                                    });
+                                }
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'Invalid QR Code',
+                            icon: 'error',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error finding user:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Failed to process QR scan',
+                        icon: 'error',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            }
+            
+            barcodeInput = ''; // Reset input
+        }
+    });
+
+    // Bottle detection handler
+    window.electronAPI.onBottleDetected(() => {
+        if (!bottleScanned) return;
+        
+        console.log('Bottle detected by sensor');
+        bottleDetected = true;
+        Swal.close();
+
+        let timerInterval;
+        Swal.fire({
+            title: 'Bottle Detected!',
+            text: 'What would you like to do?',
+            icon: 'success',
+            showCancelButton: true,
+            confirmButtonText: 'Scan Another Bottle',
+            cancelButtonText: 'Review & Save',
+            confirmButtonColor: '#83951c',
+            cancelButtonColor: '#455e14',
+            allowEscapeKey: false,
+            allowOutsideClick: false,
+            timer: 30000,
+            timerProgressBar: true,
+            showLoaderOnConfirm: false,
+            showConfirmButton: true,
+            didOpen: () => {
+                // Start the timer display
+                const b = Swal.getHtmlContainer().querySelector('b');
+                timerInterval = setInterval(() => {
+                    const timeLeft = Math.ceil(Swal.getTimerLeft() / 1000);
+                    if (b) b.textContent = timeLeft;
+                }, 100);
+            },
+            willClose: () => {
+                clearInterval(timerInterval);
+            }
+        }).then(async (result) => {
+            // Check if closed due to timer
+            if (result.dismiss === Swal.DismissReason.timer) {
+                console.log('Auto-saving due to timeout...');
+                try {
+                    // Auto-save current progress
+                    const saveResult = await storeUserPoints();
+                    console.log('Auto-save result:', saveResult);
+
+                    await Swal.fire({
+                        title: 'Auto-Saved',
+                        text: 'Session timed out. Your bottles have been saved.',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    
+                    resetModalState();
+                } catch (error) {
+                    console.error('Error in auto-save:', error);
+                    await Swal.fire({
+                        title: 'Error',
+                        text: 'Failed to save automatically: ' + error.message,
+                        icon: 'error',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            } else if (result.isConfirmed) {
+                // Scan Another Bottle logic
+                bottleScanned = false;
+                bottleDetected = false;
+                isScanningBottle = true;
+                
+                Swal.fire({
+                    title: 'Ready',
+                    text: 'Please scan another bottle',
+                    icon: 'info',
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    timer: USER_TIMEOUT,
+                    timerProgressBar: true,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    },
+                    willClose: () => {
+                        if (!bottleScanned) {
+                            Swal.fire({
+                                title: 'Session Expired',
+                                text: 'No bottle scanned within the time limit',
+                                icon: 'warning',
+                                timer: 2000,
+                                showConfirmButton: false
+                            }).then(() => {
+                                showCountdownAlert(
+                                    'Process Restarting',
+                                    'No activity detected'
+                                ).then(() => {
+                                    resetModalState();
+                                });
+                            });
+                        }
+                    }
+                });
+            } else if (result.dismiss === Swal.DismissReason.cancel) {
+                // Review & Save logic
+                Swal.fire({
+                    title: 'Review Your Bottles',
+                    html: generateReviewTable(),
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Confirm & Save',
+                    cancelButtonText: 'Back to Scanning',
+                    confirmButtonColor: '#455e14',
+                    cancelButtonColor: '#83951c',
+                    width: '800px',
+                    allowEscapeKey: false,
+                    allowOutsideClick: false
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        try {
+                            await storeUserPoints();
+                            resetModalState();
+                            Swal.fire({
+                                title: 'Success!',
+                                text: 'Points distributed successfully',
+                                icon: 'success',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                        } catch (error) {
+                            console.error('Error storing points:', error);
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'Failed to store points',
+                                icon: 'error'
+                            });
+                        }
+                    } else {
+                        // Back to Scanning clicked
+                        bottleDetected = false;
+                        bottleScanned = false;
+                        isScanningBottle = true;
+                        
+                        Swal.fire({
+                            title: 'Ready',
+                            text: 'Please scan another bottle',
+                            icon: 'info',
+                            showConfirmButton: false,
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            timer: USER_TIMEOUT,
+                            timerProgressBar: true,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            },
+                            willClose: () => {
+                                if (!bottleScanned) {
+                                    Swal.fire({
+                                        title: 'Session Expired',
+                                        text: 'No bottle scanned within the time limit',
+                                        icon: 'warning',
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    }).then(() => {
+                                        showCountdownAlert(
+                                            'Process Restarting',
+                                            'No activity detected'
+                                        ).then(() => {
+                                            resetModalState();
+                                        });
+                                    });
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    });
+
+    async function storeUserPoints() {
+        try {
+            // Get all bottles from the table
+            const bottleTableBody = document.querySelector('#bottleTable tbody');
+            const rows = bottleTableBody.getElementsByTagName('tr');
+            let totalPoints = parseInt(document.getElementById('totalPoints').textContent) || 0;
+            let totalWeight = 0;
+
+            // Calculate total weight from all scanned bottles
+            for (let row of rows) {
+                const brandName = row.cells[1].textContent; // Get brand name from table
+                try {
+                    // Fetch bottle details from Firebase
+                    const bottles = await window.electronAPI.getPetBottles();
+                    const bottle = bottles.find(b => b.brand_name === brandName);
+                    if (bottle) {
+                        // Convert weight to number and add to total
+                        const weight = parseFloat(bottle.weight) || 0;
+                        totalWeight += weight;
+                    }
+                } catch (error) {
+                    console.error('Error fetching bottle details:', error);
+                }
+            }
+
+            const userPointData = {
+                id: currentUserId,
+                name: document.getElementById('userName').textContent,
+                studentNumber: document.getElementById('userStudentNumber').textContent,
+                avatar: document.getElementById('userAvatar').src,
+                totalPoints: totalPoints,
+                bottleCount: bottleTableBody.children.length,
+                totalWeight: totalWeight,
+                deleted: false,
+                timestamp: new Date().toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                })
+            };
+
+            console.log('Storing points with data:', userPointData); // Debug log
+
+            const result = await window.electronAPI.storeUserPoints(userPointData);
+            
+            if (!result || !result.success) {
+                throw new Error('Failed to store points');
+            }
+
+            return result;
+        } catch (error) {
+            console.error('Error in storeUserPoints:', error);
+            throw error;
+        }
+    }
+
+    function showAdminPrompt() {
+            document.getElementById('adminModal').style.display = 'flex';
+        }
+
+        function verifyAdminAccess() {
+            const adminKey = document.getElementById('adminKey').value;
+            const validKeys = ['BP2024', 'BPreward'];
+            if (validKeys.includes(adminKey)) {
+                window.location.href = 'index.html';
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Access Denied',
+                    text: 'Invalid admin key',
+                    confirmButtonColor: '#455e14'
+                });
+            }
+            document.getElementById('adminKey').value = '';
+            document.getElementById('adminModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('adminModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                document.getElementById('adminKey').value = '';
+            }
+        });
+
+        // Add keyboard shortcut (Ctrl + Shift + A)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+                showAdminPrompt();
+            }
+        });
+
+    async function addBottleInfo(barcode_number) {
+        try {
+            if (bottleDetected) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Please confirm or scan the current bottle first',
+                    icon: 'error',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                return;
+            }
+
+            console.log('Processing bottle scan:', barcode_number);
+            const bottles = await window.electronAPI.getPetBottles();
+            const bottle = bottles.find(b => b.barcode_number === barcode_number);
+
+            if (bottle) {
+                console.log('Found bottle:', bottle);
+                const bottleTableBody = document.querySelector('#bottleTable tbody');
+                const rowCount = bottleTableBody.children.length + 1;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${rowCount}</td>
+                    <td>${bottle.brand_name}</td>
+                    <td>${bottle.size} ${bottle.size_unit}</td>
+                    <td>${bottle.points}</td>
+                `;
+                bottleTableBody.appendChild(row);
+
+                const currentTotal = parseInt(document.getElementById('totalPoints').textContent) || 0;
+                const newTotal = currentTotal + parseInt(bottle.points);
+                document.getElementById('totalPoints').textContent = newTotal;
+
+                showBottleWaitingAlert();
+                bottleScanned = true;
+                isScanningBottle = false;
+            } else {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'No bottle found with this barcode',
+                    icon: 'error',
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    // After error message, show ready to scan again
+                    Swal.fire({
+                        title: 'Ready',
+                        text: 'Please scan bottle',
+                        icon: 'info',
+                        showConfirmButton: false,
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        timer: USER_TIMEOUT,
+                        timerProgressBar: true,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        },
+                        willClose: () => {
+                            if (!bottleScanned) {
+                                resetModalState();
+                                Swal.fire({
+                                    title: 'Session Expired',
+                                    text: 'No bottle scanned within the time limit',
+                                    icon: 'warning',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            }
+                        }
+                    });
+                });
+            }
+        } catch (error) {
+            console.error('Error processing bottle scan:', error);
+            Swal.fire({
+                title: 'Error',
+                text: 'Error processing bottle scan',
+                icon: 'error',
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                // After error message, show ready to scan again
+                Swal.fire({
+                    title: 'Ready',
+                    text: 'Please scan bottle',
+                    icon: 'info',
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    timer: USER_TIMEOUT,
+                    timerProgressBar: true,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    },
+                    willClose: () => {
+                        if (!bottleScanned) {
+                            resetModalState();
+                            Swal.fire({
+                                title: 'Session Expired',
+                                text: 'No bottle scanned within the time limit',
+                                icon: 'warning',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                        }
+                    }
+                });
+            });
+        }
+    }
+
+    // Update the review table styling and layout
+    function generateReviewTable() {
+        const bottleTableBody = document.querySelector('#bottleTable tbody');
+        const rows = bottleTableBody.getElementsByTagName('tr');
+        const totalPoints = document.getElementById('totalPoints').textContent;
+        const userName = document.getElementById('userName').textContent;
+        const userStudentNumber = document.getElementById('userStudentNumber').textContent;
+
+        let tableHtml = `
+            <div class="review-container">
+                <div class="user-review-info">
+                    <h3>User Details</h3>
+                    <p><strong>Name:</strong> ${userName}</p>
+                    <p><strong>Student Number:</strong> ${userStudentNumber}</p>
+                </div>
+                <div class="review-table">
+                    <h3>Bottle Details</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Brand Name</th>
+                                <th>Size</th>
+                                <th>Points</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+
+        for (let row of rows) {
+            tableHtml += row.outerHTML;
+        }
+
+        tableHtml += `
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3"><strong>Total Points:</strong></td>
+                                <td><strong>${totalPoints}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        return tableHtml;
+    }
+
+    // Update the review table styling
+    const style = document.createElement('style');
+    style.textContent = `
+        .review-container {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .user-review-info {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .user-review-info h3 {
+            color: #455e14;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .user-review-info p {
+            margin: 5px 0;
+            color: #333;
+        }
+
+        .review-table {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .review-table h3 {
+            color: #455e14;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .review-table table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .review-table th, .review-table td {
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            text-align: left;
+        }
+
+        .review-table thead {
+            background-color: #f7f9fc;
+        }
+
+        .review-table thead th {
+            font-weight: 600;
+            color: #455e14;
+        }
+
+        .review-table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .review-table tbody tr:hover {
+            background-color: #f0f4f8;
+        }
+
+        .review-table tfoot {
+            background-color: #f7f9fc;
+            font-weight: bold;
+        }
+
+        .review-table tfoot td {
+            border-top: 2px solid #e2e8f0;
+        }
+    `;
+    document.head.appendChild(style);
+
+    function startUserInactivityTimer() {
+        clearTimeout(userInactivityTimer);
+        userInactivityTimer = setTimeout(() => {
+            if (!bottleScanned) {
+                showCountdownAlert(
+                    'Session Expired',
+                    'No bottle scanned within the time limit'
+                ).then(() => {
+                    resetModalState();
+                });
+            }
+        }, USER_TIMEOUT);
+    }
+
+    function startBottleDetectionTimer() {
+        clearTimeout(bottleDetectionTimer);
+        bottleDetectionTimer = setTimeout(() => {
+            if (!bottleDetected) {
+                resetBottleScanState();
+            }
+        }, BOTTLE_DETECTION_TIMEOUT);
+    }
+
+    function resetBottleScanState() {
+        bottleScanned = false;
+        bottleDetected = false;
+        isScanningBottle = false; // Changed to false since we're resetting
+        const scanBottleButton = document.getElementById('start-scan-bottle');
+        if (scanBottleButton) {
+            scanBottleButton.disabled = true; // Always disable when resetting
+        }
+    }
+    </script>
+</body>
+</html> 

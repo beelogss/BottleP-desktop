@@ -331,3 +331,43 @@ body {
         padding: 2rem;
     }
 }
+
+.back-to-scan {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: var(--white);
+    color: var(--primary);
+    border: 2px solid var(--primary);
+    padding: 0.8rem 1.5rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.back-to-scan:hover {
+    background: var(--primary);
+    color: var(--white);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.back-to-scan i {
+    font-size: 0.9rem;
+}
+
+/* Add media query for mobile responsiveness */
+@media (max-width: 480px) {
+    .back-to-scan {
+        top: 10px;
+        left: 10px;
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+    }
+}

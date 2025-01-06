@@ -20,7 +20,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   uploadPetBottleImage: (file) => ipcRenderer.invoke('upload-pet-bottle-image', file),
   addPetBottle: (petBottle) => ipcRenderer.invoke('add-pet-bottle', petBottle),
   getPetBottles: () => ipcRenderer.invoke('get-pet-bottles'),
-  editPetBottle: (petBottleId, brandName, size, sizeUnit, weight, weightUnit, barcodeNumber, imageUrl) => ipcRenderer.invoke('edit-pet-bottle', petBottleId, brandName, size, sizeUnit, weight, weightUnit, barcodeNumber, imageUrl),
+  editPetBottle: (petBottleId, brandName, size, sizeUnit, weight, weightUnit, barcodeNumber, points) => 
+      ipcRenderer.invoke('edit-pet-bottle', petBottleId, brandName, size, sizeUnit, weight, weightUnit, barcodeNumber, points),
   deletePetBottle: (petBottleId) => ipcRenderer.invoke('delete-pet-bottle', petBottleId),
 
   addClaimedReward: (reward) => ipcRenderer.invoke('add-claimed-reward', reward),
@@ -41,4 +42,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getReports: () => ipcRenderer.invoke('get-reports'),
   updateReport: (reportId, status, adminResponse) => 
       ipcRenderer.invoke('update-report', reportId, status, adminResponse),
+
+  calculateTotalRevenue: () => ipcRenderer.invoke('calculate-total-revenue'),
+  getBottleTransactions: () => ipcRenderer.invoke('get-bottle-transactions'),
 });

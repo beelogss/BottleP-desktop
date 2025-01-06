@@ -1,0 +1,185 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background-color: #f5f5f5;
+    min-height: 100vh;
+}
+
+.container {
+    padding: 2rem;
+}
+
+.scan-container {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e5eeda;
+}
+
+.header h1 {
+    color: #455e14;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.scan-sections {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 2rem;
+}
+
+.scan-section {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.scan-section h2 {
+    color: #455e14;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+#userAvatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #e5eeda;
+}
+
+.user-details {
+    text-align: center;
+}
+
+.user-details p {
+    margin: 0.5rem 0;
+    color: #666;
+}
+
+.scan-button, .confirm-button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.scan-button {
+    background: #83951c;
+    color: white;
+}
+
+.scan-button:hover:not(:disabled) {
+    background: #7a9b57;
+    transform: translateY(-2px);
+}
+
+.scan-button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+}
+
+.confirm-button {
+    background: #455e14;
+    color: white;
+}
+
+.confirm-button:hover:not(:disabled) {
+    background: #5c7e1c;
+    transform: translateY(-2px);
+}
+
+.confirm-button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+}
+
+.bottle-info {
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e5eeda;
+}
+
+th {
+    background: #7a9b57;
+    color: white;
+    font-weight: 500;
+}
+
+tbody tr:hover {
+    background: #f9f9f9;
+}
+
+.button-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 968px) {
+    .scan-sections {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    .header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .button-group {
+        grid-template-columns: 1fr;
+    }
+} 

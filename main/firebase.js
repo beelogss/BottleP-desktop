@@ -149,10 +149,11 @@ async function editRewardFromFirestore(rewardId, rewardName, stock, points) {
     const rewardRef = doc(db, 'rewards', rewardId);
     await updateDoc(rewardRef, {
       reward_name: rewardName,
-      stock: stock,
-      points: points
+      stock: Number(stock),
+      points: Number(points)
     });
     console.log('Reward successfully updated in Firebase!');
+    return { success: true };
   } catch (error) {
     console.error('Error editing reward in Firebase:', error);
     throw error;
@@ -206,7 +207,7 @@ async function getPetBottlesFromFirestore() {
   }
 }
 
-async function editPetBottleInFirestore(petBottleId, brandName, size, sizeUnit, weight, weightUnit, barcodeNumber) {
+async function editPetBottleInFirestore(petBottleId, brandName, size, sizeUnit, weight, weightUnit, barcodeNumber, points) {
   try {
     const petBottleRef = doc(db, 'petBottles', petBottleId);
     await updateDoc(petBottleRef, {
@@ -216,6 +217,7 @@ async function editPetBottleInFirestore(petBottleId, brandName, size, sizeUnit, 
       weight: weight,
       weight_unit: weightUnit,
       barcode_number: barcodeNumber,
+      points: points,
     });
     console.log('Pet bottle successfully updated in Firebase!');
   } catch (error) {
@@ -383,6 +385,54 @@ async function updateReportStatus(reportId, status, adminResponse) {
     }
 }
 
+async function calculateTotalRevenue() {
+    try {
+        const totalWeight = await getTotalBottleWeight(); // Get total weight in grams
+        const pricePerKg = 18; // 18 pesos per kg
+        const revenueInPesos = (totalWeight / 1000) * pricePerKg; // Convert grams to kg and multiply by price
+        return revenueInPesos;
+    } catch (error) {
+        console.error('Error calculating total revenue:', error);
+        throw error;
+    }
+}
+
+async function getBottleTransactions() {
+    try {
+        const userPoints = await getUserPointsFromFirestore();
+        const transactions = userPoints.map(doc => {
+            // Get the timestamp and format it as YYYYMMDD
+            const timestamp = doc.timestamp ? new Date(doc.timestamp) : new Date();
+            const dateStr = timestamp.toISOString().split('T')[0].replace(/-/g, '');
+            
+            // Ensure we get the weight value
+            const totalWeight = doc.totalWeight || 0;
+            
+            // Calculate amount based on weight (18 pesos per kg)
+            const weightInKg = totalWeight / 1000;
+            const amount = weightInKg * 18;
+
+            return {
+                transactionId: `TXN-${dateStr}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
+                date: timestamp,
+                studentNumber: doc.studentNumber || '',
+                name: doc.name || '',
+                bottleCount: doc.bottleCount || 0,
+                totalWeight: totalWeight, // Make sure we're including the weight
+                points: doc.totalPoints || 0,
+                amount: amount,
+                status: 'Completed'
+            };
+        });
+
+        console.log('Transactions with weights:', transactions); // Debug log
+        return transactions;
+    } catch (error) {
+        console.error('Error getting bottle transactions:', error);
+        throw error;
+    }
+}
+
 module.exports = {
   getUserCountFromFirestore,
   getClaimedRewardsCount,
@@ -423,4 +473,7 @@ module.exports = {
 
   getReportsFromFirestore,
   updateReportStatus,
+
+  calculateTotalRevenue,
+  getBottleTransactions,
 };
