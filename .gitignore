@@ -11,7 +11,6 @@ out/
 # Ignore other OS-specific files
 .DS_Store
 Thumbs.db
-
 # Ignore Electron binaries
 electron/dist/
 
@@ -19,3 +18,23 @@ electron/dist/
 *.exe
 *.dll
 *.zip
+
+# Dependencies
+node_modules/
+.codeium/
+.bun/
+
+# Build output
+dist/
+out/
+
+# Cache
+.cache/
+package-lock.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Electron binaries
+electron/dist/

@@ -15,7 +15,7 @@
             color: green;
             font-weight: bold;
         }
-        
+
         .pending {
             color: orange;
             font-weight: bold;
@@ -47,8 +47,9 @@
             <a href="#" onclick="showContent('reports')" id="reports-link">
                 <i class="fa-solid fa-flag"></i>&nbsp;&nbsp;&nbsp;Reports
             </a>
-            <a href="#" onclick="showContent('settings')"><i class="fa-solid fa-gear"></i>&nbsp;&nbsp;&nbsp;Settings</a>
-            <a href="index.html"><i class="fa-solid fa-right-from-bracket"></i>&nbsp;&nbsp;&nbsp;Logout</a>
+            <a href="#" onclick="showContent('settings')" id="settings-link"><i
+                    class="fa-solid fa-gear"></i>&nbsp;&nbsp;&nbsp;Settings</a>
+            <a href="#" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i>&nbsp;&nbsp;&nbsp;Logout</a>
         </div>
 
         <div class="content" id="content">
@@ -65,7 +66,14 @@
 
             // Always use the main stylesheet
             dynamicCss.href = 'assets/style.css';
-
+            // Add transitioning class to fade out current content
+            content.classList.add('transitioning');
+            // Wait for fade out
+            await new Promise(resolve => setTimeout(resolve, 150));
+            // Remove transitioning class to fade in new content
+            setTimeout(() => {
+                content.classList.remove('transitioning');
+            }, 50);
             // Remove active class from all sidebar links
             sidebarLinks.forEach(link => link.classList.remove('active'));
 
@@ -85,9 +93,9 @@
                         <div class="user-count-text" id="user-count-text">Total Users:</div>
                         <div class="user-count-number" id="user-count">Loading...</div>
                     </div>
-                    <div class="grid-item box2" id="claimed-rewards-container">
-                        <div class="claimed-rewards-text" id="claimed-rewards-text">Total Claimed Rewards:</div>
-                        <div class="claimed-rewards-number" id="claimed-rewards-count">Loading...</div>
+                    <div class="grid-item box2" id="revenue-container">
+                        <div class="revenue-text" id="revenue-text">Total Revenue:</div>
+                        <div class="revenue-number" id="revenue-count">Loading...</div>
                     </div>
                     <div class="grid-item box3" id="bottle-contribution-container">
                         <div class="bottle-contribution-text" id="bottle-count-text">Total Bottle Contribution:</div>
@@ -97,10 +105,11 @@
                         <table id="userTable">
                             <thead>
                                 <tr>
-                                    <th>Rank Number</th>
+                                    <th>Rank</th>
+                                    <th>Avatar</th>
                                     <th>Student Number</th>
-                                    <th>Full Name</th>
-                                    <th>Bottle Contribution</th>
+                                    <th>Name</th>
+                                    <th>Bottles</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -118,7 +127,7 @@
                     </div>
                 </div>`;
                     displayUserCount();
-                    displayClaimedRewardsCount();
+                    displayTotalRevenue();
                     displayBottleCount();
                     fetchData();
                     break;
@@ -126,24 +135,28 @@
                     dynamicCss.href = 'assets/style.css';
                     document.getElementById('manage-user-link').classList.add('active');
                     content.innerHTML = `
-                <div class="main-content">
+                <div class="main-content manage-user-page">
                     <h2>Manage Users</h2>
                     <div class="search-bar">
                         <input type="text" id="search-input" placeholder="Search by full name or student number">
                     </div>
-                    <table id="data-table">
-                        <thead>
-                            <tr>
-                                <th>Student Number</th>
-                                <th>Full Name</th>
-                                <th>Email</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                    </table>
-                    <button id="get-data">Get Data</button> 
+                    <div class="table-container">
+                        <table id="data-table">
+                            <thead>
+                                <tr>
+                                    <th>No.</th>
+                                    <th>Avatar</th>
+                                    <th>Student Number</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                    <button id="get-data">Get Data</button>
                 </div>`;
                     initializeManageUser();
                     break;
@@ -157,48 +170,63 @@
                         <table id="userTable">
                             <thead>
                                 <tr>
-                                    <th>Rank Number</th>
+                                    <th>Rank</th>
+                                    <th>Avatar</th>
+                                    <th>Student Number</th>
                                     <th>Full Name</th>
-                                    <th>Collected Points
-                                        <div class="filter-options">
-                                            <label for="leaderboard-filter">View by:</label>
-                                            <select id="leaderboard-filter">
-                                                <option value="week">This Week</option>
-                                                <option value="month">This Month</option>
-                                                <option value="year">This Year</option>
-                                            </select>
-                                        </div>
-                                    </th>
+                                    <th>Bottles</th>
+                                    <th>Points</th>
                                 </tr>
                             </thead>
                             <tbody>
                             </tbody>
                         </table>
-                        <button id="get-data" style="display:none;">Fetch Data</button>
                     </div>`;
                     initializeLeaderboard();
                     break;
                 case 'points-allocation':
                     dynamicCss.href = 'assets/style.css';
-                    document.getElementById('points-allocation-link').classList.add('active');
                     content.innerHTML = `
-                    <div class="main-content">
+                    <div class="points-allocation-container">
                         <h2>Points Allocation</h2>
-                        <div class="search-bar">
-                            <input type="text" id="search-input" placeholder="Search by student number">
+                        <div class="controls-container">
+                            <div class="search-bar">
+                                <input type="text" id="search-input" placeholder="Search by student number or name">
+                            </div>
+                            <div class="filter-sort-container">
+                                <select id="sort-select" class="sort-select">
+                                    <option value="date-new">Date (Newest First)</option>
+                                    <option value="date-old">Date (Oldest First)</option>
+                                    <option value="points-high">Points (High to Low)</option>
+                                    <option value="points-low">Points (Low to High)</option>
+                                    <option value="bottles-high">Bottles (High to Low)</option>
+                                    <option value="bottles-low">Bottles (Low to High)</option>
+                                </select>
+                                <select id="filter-select" class="filter-select">
+                                    <option value="all">All Points</option>
+                                    <option value="100">100+ Points</option>
+                                    <option value="500">500+ Points</option>
+                                    <option value="1000">1000+ Points</option>
+                                </select>
+                            </div>
                         </div>
-                        <table id="userTable">
-                            <thead>
-                                <tr>
-                                    <th>Student Number</th>
-                                    <th>Full Name</th>
-                                    <th>Bottle Count</th>
-                                    <th>Total Points</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                        </table>
+                        <div class="points-table-container">
+                            <table class="points-table">
+                                <thead>
+                                    <tr>
+                                        <th>No.</th>
+                                        <th>Avatar</th>
+                                        <th>Student No.</th>
+                                        <th>Name</th>
+                                        <th>Bottles</th>
+                                        <th>Points</th>
+                                        <th>Weight</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
                     </div>`;
                     initializePointsAllocation();
                     break;
@@ -244,46 +272,66 @@
                     content.innerHTML = `
                     <div class="main-content">
                         <h2>PET Bottles</h2>
-                        <div id="status"></div>
-                        <button class="AddBottle" onclick="showContent('add-pet-bottle')">Add New Pet Bottle</button>
-                        <div id="bottles-container" class="bottles-grid">
-                            <!-- Bottles will be dynamically displayed here -->
-                        </div>
-                        <button id="fetch-bottles-btn">Refresh Bottles</button>
+                         <div class="pet-bottles-container">
+            <div class="header-actions">
+                <button class="AddBottle" onclick="showContent('add-pet-bottle')">Add New Bottle</button>
+                <button id="fetch-bottles-btn" class="refresh-button">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+            <div class="bottles-grid" id="bottles-container">
+                <!-- Bottles will be dynamically added here -->
+            </div>
+        </div>
                         <!-- Modal for editing bottle -->
                         <div id="editModal" class="modal">
                             <div class="modal-content">
                                 <span class="close" id="closeEditModal">&times;</span>
-                                <h3>Edit Bottle</h3>
+                                <h2>Edit Pet Bottle</h2>
                                 <div class="edit-modal-body">
                                     <div class="image-section">
                                         <img id="editImage" class="bottle-image" alt="Bottle Image">
                                     </div>
                                     <div class="form-section">
-                                        <label for="editBrand">Brand Name:</label>
-                                        <input type="text" id="editBrand" class="modal-input" placeholder="Enter brand name">
-                                        <label for="editsize">Size:</label>
-                                        <div class="editsizeinput">
-                                            <input type="number" id="editsize" class="modal-input" placeholder="Enter size">
-                                            <select id="editsizeunit">
-                                                <option value="ml">ml</option>
-                                                <option value="L">L</option>
-                                                <option value="oz">oz</option>
-                                            </select>
+                                        <div class="input-group">
+                                            <label for="editBrand">Brand Name</label>
+                                            <input type="text" id="editBrand" class="modal-input" placeholder="Enter brand name">
                                         </div>
-                                        <label for="editweight">Weight:</label>
-                                        <div class="editweightinput">
-                                            <input type="number" id="editweight" class="modal-input" placeholder="Enter weight">
-                                            <select id="editweightunit">
-                                                <option value="g">g</option>
-                                                <option value="kg">kg</option>
-                                                <option value="lbs">lbs</option>
-                                            </select>
+                                        
+                                        <div class="input-group">
+                                            <label for="editsize">Size</label>
+                                            <div class="input-row">
+                                                <input type="number" id="editsize" class="modal-input" placeholder="Enter size">
+                                                <select id="editsizeunit">
+                                                    <option value="ml">ml</option>
+                                                    <option value="L">L</option>
+                                                    <option value="oz">oz</option>
+                                                </select>
+                                            </div>
                                         </div>
-                                        <label for="editBarcode">Barcode:</label>
-                                        <input type="number" id="editBarcode" class="modal-input" placeholder="Enter ">
-                                        <label for="editPoints">Points:</label>
-                                        <input type="number" id="editPoints" class="modal-input" placeholder="Enter points">
+                                        
+                                        <div class="input-group">
+                                            <label for="editweight">Weight</label>
+                                            <div class="input-row">
+                                                <input type="number" id="editweight" class="modal-input" placeholder="Enter weight">
+                                                <select id="editweightunit">
+                                                    <option value="g">g</option>
+                                                    <option value="kg">kg</option>
+                                                    <option value="lbs">lbs</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="input-group">
+                                            <label for="editBarcode">Barcode</label>
+                                            <input type="number" id="editBarcode" class="modal-input" placeholder="Enter barcode">
+                                        </div>
+                                        
+                                        <div class="input-group">
+                                            <label for="editPoints">Points</label>
+                                            <input type="number" id="editPoints" class="modal-input" placeholder="Enter points">
+                                        </div>
+                                        
                                         <button id="saveEdit" class="modal-save-button">Save Changes</button>
                                     </div>
                                 </div>
@@ -299,11 +347,15 @@
                     content.innerHTML = `
                     <div class="main-content">
                         <h2>Manage Claimed Rewards</h2>
-                        <div class="search-bar">
-                            <input type="text" id="search-input" placeholder="Search by reward name or barcode">
-                            <button id="start-scan">Start Scanning</button>
+                        <div class="search-scanner-container">
+                            <div class="search-bar">
+                                <input type="text" id="search-input" placeholder="Search by reward name or barcode">
+                            </div>
+                            <div class="scanner-section">
+                                <button id="start-scan">Start Scanning</button>
+                                <div class="scanner-status disconnected" id="scanner-status">Scanner not connected</div>
+                            </div>
                         </div>
-                        <div class="scanner-status" id="scanner-status">Scanner not connected</div>
                         <h3>To Be Claimed Rewards</h3>
                         <div class="table-container">
                             <table id="to-be-claimed-table">
@@ -363,8 +415,8 @@
                                     <p class="stat-value" id="total-bottles">0</p>
                                 </div>
                                 <div class="stat-card">
-                                    <h3>Average Daily Sales</h3>
-                                    <p class="stat-value" id="avg-daily-sales">₱0.00</p>
+                                    <h3>Total Weight</h3>
+                                    <p class="stat-value" id="total-weight">0g</p>
                                 </div>
                             </div>
 
@@ -397,7 +449,6 @@
                                             <th data-sort="totalWeight">Weight (g) <i class="fas fa-sort"></i></th>
                                             <th data-sort="points">Points <i class="fas fa-sort"></i></th>
                                             <th data-sort="amount">Amount <i class="fas fa-sort"></i></th>
-                                            <th>Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -405,7 +456,7 @@
                                 </table>
                             </div>
                         </div>`;
-                    
+
                     // Add CSS styles for sorting indicators
                     const styleSheet = document.createElement("style");
                     styleSheet.textContent = `
@@ -440,8 +491,42 @@
                     initializeSales();
                     break;
                 case 'settings':
-                    dynamicCss.href = 'assets/settings.css';
-                    content.innerHTML = '<h1>Settings</h1>';
+                    document.getElementById('settings-link').classList.add('active');
+                    content.innerHTML = `
+                        <div class="main-content settings-page">
+                            <h2>Settings</h2>
+                            <div class="settings-container">
+                                <!-- Admin Account Section -->
+                                <div class="settings-section">
+                                    <h3>Change Admin Password</h3>
+                                    <form id="change-password-form">
+                                        <div class="form-group">
+                                            <label for="current-password">Current Password</label>
+                                            <div class="password-input-container">
+                                                <input type="password" id="current-password" required>
+                                                <i class="fas fa-eye-slash password-toggle"></i>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="new-password">New Password</label>
+                                            <div class="password-input-container">
+                                                <input type="password" id="new-password" required>
+                                                <i class="fas fa-eye-slash password-toggle"></i>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="confirm-password">Confirm New Password</label>
+                                            <div class="password-input-container">
+                                                <input type="password" id="confirm-password" required>
+                                                <i class="fas fa-eye-slash password-toggle"></i>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="settings-button">Change Password</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>`;
+                    initializeSettings();
                     break;
 
                 case 'edit-user':
@@ -583,15 +668,15 @@
             }
         }
 
-        async function displayClaimedRewardsCount() {
+        async function displayTotalRevenue() {
             try {
-                const claimedCount = await window.electronAPI.getClaimedRewardsCount();
-                document.getElementById('claimed-rewards-text').textContent = 'Total Claimed Rewards:';
-                document.getElementById('claimed-rewards-count').textContent = claimedCount;
+                const totalRevenue = await window.electronAPI.calculateTotalRevenue();
+                document.getElementById('revenue-text').textContent = 'Total Revenue:';
+                document.getElementById('revenue-count').textContent = `₱${totalRevenue.toFixed(2)}`;
             } catch (error) {
-                console.error('Error fetching claimed rewards count:', error);
-                document.getElementById('claimed-rewards-text').textContent = 'Total Claimed Rewards:';
-                document.getElementById('claimed-rewards-count').textContent = 'Error loading claimed rewards count';
+                console.error('Error fetching total revenue:', error);
+                document.getElementById('revenue-text').textContent = 'Total Revenue:';
+                document.getElementById('revenue-count').textContent = 'Error loading revenue';
             }
         }
 
@@ -628,7 +713,8 @@
                         studentNumber: user.studentNumber,
                         name: user.name,
                         bottleCount: 0,
-                        totalPoints: 0
+                        totalPoints: 0,
+                        avatar: user.avatar || null // Make sure we capture the avatar
                     };
                 }
                 aggregatedData[user.studentNumber].bottleCount += user.bottleCount || 0;
@@ -639,13 +725,30 @@
         }
 
         function updateTable(data) {
+            // Sort data by bottle count in descending order
             data.sort((a, b) => b.bottleCount - a.bottleCount);
+            
+            // Take only top 5 contributors
+            const top5Data = data.slice(0, 5);
+            
             const dataTableBody = document.querySelector('#userTable tbody');
             dataTableBody.innerHTML = '';
-            data.forEach((user, index) => {
+            
+            top5Data.forEach((user, index) => {
+                // For debugging
+                console.log('User data:', user);
+                console.log('Avatar URL:', user.avatar);
+                
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${index + 1}</td>
+                    <td>
+                        <img src="${user.avatar || 'assets/images/default-profile.png'}" 
+                             alt="User Avatar" 
+                             class="user-avatar-small"
+                             onerror="this.src='assets/images/default-profile.png'"
+                             style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+                    </td>
                     <td>${user.studentNumber}</td>
                     <td>${user.name}</td>
                     <td>${user.bottleCount || 0}</td>
@@ -659,20 +762,20 @@
                 const totalWeight = await window.electronAPI.getTotalBottleWeight();
                 const targetWeight = 20000; // 20kg in grams
                 const percentage = Math.min((totalWeight / targetWeight) * 100, 100);
-                
+
                 const circle = document.getElementById('progress-circle');
                 const text = document.getElementById('progress-text');
                 const description = document.getElementById('progress-descriptions');
-                
+
                 // Update the circle's background
                 circle.style.background = `conic-gradient(
                     #83951c ${percentage * 3.6}deg,
                     #ecf0f1 ${percentage * 3.6}deg
                 )`;
-                
+
                 // Update the percentage text
                 text.textContent = `${Math.round(percentage)}%`;
-                
+
                 // Update the description text
                 description.textContent = `Total Weight: ${totalWeight}g / ${targetWeight}g`;
             } catch (error) {
@@ -694,7 +797,7 @@
                 document.getElementById('user-change').classList.toggle('positive', userCount.change > 0);
                 document.getElementById('user-change').classList.toggle('negative', userCount.change < 0);
 
-                document.getElementById('claimed-rewards-count').innerText = claimedRewards.total;
+                document.getElementById('revenue-count').innerText = claimedRewards.total;
                 document.getElementById('rewards-change').innerText = claimedRewards.change > 0 ? `↑ ${claimedRewards.change}%` : `↓ ${Math.abs(claimedRewards.change)}%`;
                 document.getElementById('rewards-change').classList.toggle('positive', claimedRewards.change > 0);
                 document.getElementById('rewards-change').classList.toggle('negative', claimedRewards.change < 0);
@@ -732,9 +835,17 @@
             function updateTable(data) {
                 // Clear previous table rows
                 dataTableBody.innerHTML = '';
-                data.forEach(user => {
+                data.forEach((user, index) => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>
+                            <img src="${user.avatar || 'assets/images/default-profile.png'}" 
+                                 alt="User Avatar" 
+                                 class="user-avatar-small"
+                                 onerror="this.src='assets/images/default-profile.png'"
+                                 style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+                        </td>
                         <td>${user.studentNumber}</td>
                         <td>${user.name}</td>
                         <td>${user.email}</td>
@@ -748,9 +859,6 @@
                 attachEventHandlers(); // Reattach event handlers for both edit and delete
             }
 
-            // Fetch and display data on button click (or on page load)
-            getDataButton.addEventListener('click', fetchData);
-
             // Search functionality
             searchInput.addEventListener('input', async () => {
                 const query = searchInput.value.toLowerCase();
@@ -760,6 +868,9 @@
                 });
                 updateTable(filteredData); // Update table with filtered data
             });
+
+            // Fetch and display data on button click (or on page load)
+            getDataButton.addEventListener('click', fetchData);
 
             // Attach event handlers to edit and delete buttons
             function attachEventHandlers() {
@@ -812,69 +923,13 @@
                 const aggregatedData = {};
 
                 data.forEach(user => {
-                    if (!aggregatedData[user.name]) {
-                        aggregatedData[user.name] = {
-                            name: user.name,
-                            bottleCount: 0,
-                            totalPoints: 0
-                        };
-                    }
-                    aggregatedData[user.name].bottleCount += user.bottleCount || 0;
-                    aggregatedData[user.name].totalPoints += user.totalPoints || 0;
-                });
-
-                return Object.values(aggregatedData);
-            }
-
-            // Update table with user data
-            function updateTable(data) {
-                // Sort data by total points in descending order
-                data.sort((a, b) => b.totalPoints - a.totalPoints);
-
-                dataTableBody.innerHTML = '';
-                data.forEach((user, index) => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${index + 1}</td>
-                        <td>${user.name}</td>
-                        <td>${user.totalPoints || 0}</td>
-                    `;
-                    dataTableBody.appendChild(row);
-                });
-            }
-
-            // Auto-fetch data when page loads
-            fetchData();
-        }
-
-        //FUNCTION FOR POINTS ALLOCATION
-        function initializePointsAllocation() {
-            const dataTableBody = document.querySelector('#userTable tbody');
-            const searchInput = document.getElementById('search-input');
-
-            // Fetch and display data in the table
-            async function fetchData() {
-                try {
-                    const data = await window.electronAPI.getUserPoints();
-                    console.log('Data received in renderer:', data);
-                    const aggregatedData = aggregateData(data);
-                    updateTable(aggregatedData); // Update table with aggregated data
-                } catch (error) {
-                    console.error('Error fetching data:', error);
-                }
-            }
-
-            // Aggregate data by student number
-            function aggregateData(data) {
-                const aggregatedData = {};
-
-                data.forEach(user => {
                     if (!aggregatedData[user.studentNumber]) {
                         aggregatedData[user.studentNumber] = {
                             studentNumber: user.studentNumber,
                             name: user.name,
                             bottleCount: 0,
-                            totalPoints: 0
+                            totalPoints: 0,
+                            avatar: user.avatar || null // Make sure we capture the avatar
                         };
                     }
                     aggregatedData[user.studentNumber].bottleCount += user.bottleCount || 0;
@@ -887,34 +942,123 @@
             // Update table with user data
             function updateTable(data) {
                 // Sort data by total points in descending order
-                data.sort((a, b) => b.totalPoints - a.totalPoints);
-                // Clear previous table rows
+                data.sort((a, b) => b.bottleCount - a.bottleCount);
+
                 dataTableBody.innerHTML = '';
-                data.forEach(user => {
+                data.forEach((user, index) => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                    <td>${user.studentNumber}</td>
-                    <td>${user.name}</td>
-                    <td>${user.bottleCount}</td>
-                    <td>${user.totalPoints}</td>
-                `;
+                        <td>${index + 1}</td>
+                        <td>
+                            <img src="${user.avatar || 'assets/images/default-profile.png'}" 
+                                 alt="User Avatar" 
+                                 class="user-avatar-small"
+                                 onerror="this.src='assets/images/default-profile.png'"
+                                 style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+                        </td>
+                        <td>${user.studentNumber}</td>
+                        <td>${user.name}</td>
+                        <td>${user.bottleCount || 0}</td>
+                        <td>${user.totalPoints || 0}</td>
+                    `;
                     dataTableBody.appendChild(row);
                 });
             }
 
-            // Search functionality
-            searchInput.addEventListener('input', async () => {
-                const query = searchInput.value.toLowerCase();
-                const data = await window.electronAPI.getUserPoints(); // Fetch all data
-                const aggregatedData = aggregateData(data);
-                const filteredData = aggregatedData.filter(user => {
-                    return user.studentNumber.toString().includes(query); // Filter by student number
-                });
-                updateTable(filteredData); // Update table with filtered data
-            });
-
             // Auto-fetch data when page loads
             fetchData();
+        }
+
+        //FUNCTION FOR POINTS ALLOCATION
+        function initializePointsAllocation() {
+            const tableBody = document.querySelector('.points-table tbody');
+            const searchInput = document.getElementById('search-input');
+            const sortSelect = document.getElementById('sort-select');
+            const filterSelect = document.getElementById('filter-select');
+
+            async function fetchAndDisplayData() {
+                try {
+                    const data = await window.electronAPI.getUserPoints();
+                    let processedData = [...data];
+
+                    // Apply filter
+                    if (filterSelect.value !== 'all') {
+                        const minPoints = parseInt(filterSelect.value);
+                        processedData = processedData.filter(user => (user.totalPoints || 0) >= minPoints);
+                    }
+
+                    // Apply sort
+                    switch (sortSelect.value) {
+                        case 'date-new':
+                            processedData.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+                            break;
+                        case 'date-old':
+                            processedData.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+                            break;
+                        case 'points-high':
+                            processedData.sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0));
+                            break;
+                        case 'points-low':
+                            processedData.sort((a, b) => (a.totalPoints || 0) - (b.totalPoints || 0));
+                            break;
+                        case 'bottles-high':
+                            processedData.sort((a, b) => (b.bottleCount || 0) - (a.bottleCount || 0));
+                            break;
+                        case 'bottles-low':
+                            processedData.sort((a, b) => (a.bottleCount || 0) - (b.bottleCount || 0));
+                            break;
+                    }
+
+                    // Apply search filter
+                    const searchQuery = searchInput.value.toLowerCase();
+                    if (searchQuery) {
+                        processedData = processedData.filter(user => 
+                            (user.studentNumber?.toString().toLowerCase().includes(searchQuery) ||
+                             user.name?.toLowerCase().includes(searchQuery))
+                        );
+                    }
+
+                    // Update table
+                    tableBody.innerHTML = '';
+                    processedData.forEach((user, index) => {
+                        const row = document.createElement('tr');
+                        const timestamp = user.timestamp ? new Date(user.timestamp).toLocaleString() : 'N/A';
+                        
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>
+                                <img src="${user.avatar || 'assets/images/default-profile.png'}" 
+                                     alt="User Avatar" 
+                                     class="user-avatar-small"
+                                     onerror="this.src='assets/images/default-profile.png'">
+                            </td>
+                            <td>${user.studentNumber || 'N/A'}</td>
+                            <td>${user.name || 'N/A'}</td>
+                            <td>${user.bottleCount || 0}</td>
+                            <td>${user.totalPoints || 0}</td>
+                            <td>${user.totalWeight ? user.totalWeight.toFixed(2) + 'g' : '0g'}</td>
+                            <td>${timestamp}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to load points allocation data',
+                        confirmButtonColor: '#83951c'
+                    });
+                }
+            }
+
+            // Event listeners
+            searchInput.addEventListener('input', fetchAndDisplayData);
+            sortSelect.addEventListener('change', fetchAndDisplayData);
+            filterSelect.addEventListener('change', fetchAndDisplayData);
+
+            // Initial load
+            fetchAndDisplayData();
         }
 
         //FUNCTION FOR REDEMPTION REWARDS
@@ -948,14 +1092,14 @@
             closeEditModal.onclick = closeModal;
 
             // Add event listener for clicking outside the modal
-            window.onclick = function(event) {
+            window.onclick = function (event) {
                 if (event.target == editModal) {
                     closeModal();
                 }
             };
 
             // Update the openEditModal function
-            window.openEditModal = function(id, name, stock, points, imageUrl) {
+            window.openEditModal = function (id, name, stock, points, imageUrl) {
                 editImage.src = imageUrl;
                 editName.value = name;
                 editStock.value = stock;
@@ -966,7 +1110,7 @@
                 saveEdit.onclick = null;
 
                 // Add new event listener
-                saveEdit.onclick = async function() {
+                saveEdit.onclick = async function () {
                     if (!validateRewardInput()) {
                         return;
                     }
@@ -976,14 +1120,14 @@
                             stock: parseInt(editStock.value),
                             points: parseInt(editPoints.value)
                         };
-                        
+
                         const result = await window.electronAPI.editReward(
-                            id, 
-                            updatedReward.reward_name, 
-                            updatedReward.stock, 
+                            id,
+                            updatedReward.reward_name,
+                            updatedReward.stock,
                             updatedReward.points
                         );
-                        
+
                         if (result.success) {
                             alert('Reward updated successfully');
                             closeModal(); // Use the closeModal function
@@ -1051,7 +1195,7 @@
             }
 
             // Delete reward function
-            window.deleteReward = async function(id) {
+            window.deleteReward = async function (id) {
                 if (confirm('Are you sure you want to delete this reward?')) {
                     try {
                         await window.electronAPI.deleteReward(id);
@@ -1150,12 +1294,12 @@
 
                 try {
                     await window.electronAPI.editPetBottle(
-                        id, 
-                        brand_name, 
-                        size, 
-                        size_unit, 
-                        weight, 
-                        weight_unit, 
+                        id,
+                        brand_name,
+                        size,
+                        size_unit,
+                        weight,
+                        weight_unit,
                         barcode,
                         points // Add points parameter
                     );
@@ -1312,7 +1456,7 @@
                             const rewardId = event.target.getAttribute('data-id');
                             const currentStatus = event.target.textContent.trim();
                             const newStatus = currentStatus === 'Pending' ? 'Can be Claimed' : 'Pending';
-                            
+
                             try {
                                 await window.electronAPI.updateClaimedRewardAvailability(rewardId, newStatus);
                                 // Update button appearance
@@ -1341,13 +1485,20 @@
             // Barcode scanning functionality
             let barcodeInput = '';
             document.addEventListener('keydown', async (event) => {
-                if (isScanning) {
-                    if (event.key === 'Enter') {
-                        handleBarcodeScan(barcodeInput);
-                        barcodeInput = ''; // Reset input
-                    } else {
-                        barcodeInput += event.key;
+                if (!isScanning) return;
+
+                // Prevent default behavior for scanner input
+                if (event.key !== 'Enter') {
+                    event.preventDefault();
+                }
+
+                if (event.key === 'Enter') {
+                    if (barcodeInput.length > 0) {
+                        await handleBarcodeScan(barcodeInput);
+                        barcodeInput = ''; // Reset input after processing
                     }
+                } else if (/[\d\w]/.test(event.key)) { // Only accept alphanumeric input
+                    barcodeInput += event.key;
                 }
             });
 
@@ -1369,9 +1520,22 @@
 
             // Start scanning
             startScanButton.addEventListener('click', () => {
-                isScanning = true;
-                scannerStatus.textContent = 'Scanner connected. Ready to scan.';
-                scannerStatus.style.color = 'green';
+                isScanning = !isScanning; // Toggle scanning state
+                
+                if (isScanning) {
+                    startScanButton.textContent = 'Stop Scanning';
+                    startScanButton.classList.add('scanning');
+                    scannerStatus.textContent = 'Scanner connected. Ready to scan.';
+                    scannerStatus.classList.remove('disconnected');
+                    scannerStatus.classList.add('connected');
+                } else {
+                    startScanButton.textContent = 'Start Scanning';
+                    startScanButton.classList.remove('scanning');
+                    scannerStatus.textContent = 'Scanner not connected';
+                    scannerStatus.classList.remove('connected');
+                    scannerStatus.classList.add('disconnected');
+                    barcodeInput = ''; // Reset barcode input when stopping
+                }
             });
 
             // Fetch rewards on initialization
@@ -1564,7 +1728,7 @@
                 document.getElementById('user-change').classList.toggle('positive', userCount.change > 0);
                 document.getElementById('user-change').classList.toggle('negative', userCount.change < 0);
 
-                document.getElementById('claimed-rewards-count').innerText = claimedRewards.total;
+                document.getElementById('revenue-count').innerText = claimedRewards.total;
                 document.getElementById('rewards-change').innerText = claimedRewards.change > 0 ? `↑ ${claimedRewards.change}%` : `↓ ${Math.abs(claimedRewards.change)}%`;
                 document.getElementById('rewards-change').classList.toggle('positive', claimedRewards.change > 0);
                 document.getElementById('rewards-change').classList.toggle('negative', claimedRewards.change < 0);
@@ -1589,7 +1753,7 @@
 
             try {
                 const reports = await window.electronAPI.getReports();
-                
+
                 // Apply filters
                 const filteredReports = reports.filter(report => {
                     const statusMatch = statusFilter.value === 'all' || report.status === statusFilter.value;
@@ -1786,9 +1950,9 @@
 
                 // Even if no response is provided, we'll send an empty string instead of undefined
                 const response = adminResponse || '';
-                
+
                 const result = await window.electronAPI.updateReport(reportId, status, response);
-                
+
                 if (result.success) {
                     await Swal.fire({
                         icon: 'success',
@@ -1828,12 +1992,12 @@
                 const totalBottles = await window.electronAPI.getTotalBottleCount();
                 document.getElementById('total-bottles').textContent = totalBottles;
 
-                // Get transactions for average daily sales calculation
+                // Get and display total weight
+                const totalWeight = await window.electronAPI.getTotalBottleWeight();
+                document.getElementById('total-weight').textContent = `${totalWeight}g`;
+
+                // Get transactions for table display
                 const transactions = await window.electronAPI.getBottleTransactions();
-                
-                // Calculate average daily sales
-                const avgDailySales = calculateAverageDailySales(transactions);
-                document.getElementById('avg-daily-sales').textContent = `₱${avgDailySales.toFixed(2)}`;
 
                 // Display transactions in table
                 updateSalesTable(transactions);
@@ -1843,27 +2007,6 @@
             } catch (error) {
                 console.error('Error initializing sales:', error);
             }
-        }
-
-        function calculateAverageDailySales(transactions) {
-            if (!transactions || transactions.length === 0) return 0;
-
-            // Group transactions by date and sum their amounts
-            const dailySales = {};
-            
-            transactions.forEach(transaction => {
-                const date = new Date(transaction.date).toISOString().split('T')[0];
-                if (!dailySales[date]) {
-                    dailySales[date] = 0;
-                }
-                dailySales[date] += transaction.amount;
-            });
-
-            // Calculate the average
-            const totalSales = Object.values(dailySales).reduce((sum, amount) => sum + amount, 0);
-            const numberOfDays = Object.keys(dailySales).length;
-
-            return numberOfDays > 0 ? totalSales / numberOfDays : 0;
         }
 
         function updateSalesTable(transactions) {
@@ -1885,7 +2028,6 @@
                     <td>${formattedWeight}</td>
                     <td>${transaction.points}</td>
                     <td>₱${formattedAmount}</td>
-                    <td><span class="status-badge status-completed">Completed</span></td>
                 `;
                 tbody.appendChild(row);
             });
@@ -1921,7 +2063,7 @@
                         isAscending = true;
                     }
                     filterAndSortTransactions(transactions);
-                    
+
                     // Update sort indicators
                     headers.forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
                     header.classList.add(isAscending ? 'sorted-asc' : 'sorted-desc');
@@ -1944,15 +2086,15 @@
 
             return transactions.filter(transaction => {
                 // Search filter
-                const matchesSearch = 
+                const matchesSearch =
                     transaction.transactionId.toLowerCase().includes(searchTerm) ||
                     transaction.studentNumber.toLowerCase().includes(searchTerm) ||
                     transaction.name.toLowerCase().includes(searchTerm);
 
                 // Date filter
                 const transactionDate = new Date(transaction.date).toISOString().split('T')[0];
-                const matchesDate = (!dateFrom || transactionDate >= dateFrom) && 
-                                   (!dateTo || transactionDate <= dateTo);
+                const matchesDate = (!dateFrom || transactionDate >= dateFrom) &&
+                    (!dateTo || transactionDate <= dateTo);
 
                 return matchesSearch && matchesDate;
             });
@@ -1963,7 +2105,7 @@
                 let valueA, valueB;
 
                 // Determine which values to compare based on column index
-                switch(columnIndex) {
+                switch (columnIndex) {
                     case 0: // Transaction ID
                         valueA = a.transactionId;
                         valueB = b.transactionId;
@@ -2037,6 +2179,231 @@
             } catch (error) {
                 console.error('Error exporting to Excel:', error);
                 alert('Error exporting to Excel. Please try again.');
+            }
+        }
+
+        function initializeSettings() {
+            // Initialize password toggles
+            document.querySelectorAll('.password-toggle').forEach(toggle => {
+                toggle.addEventListener('click', function () {
+                    const input = this.parentElement.querySelector('input');
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        this.classList.remove('fa-eye-slash');
+                        this.classList.add('fa-eye');
+                    } else {
+                        input.type = 'password';
+                        this.classList.remove('fa-eye');
+                        this.classList.add('fa-eye-slash');
+                    }
+                });
+            });
+
+            // Handle password change
+            const form = document.getElementById('change-password-form');
+            if (form) {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+
+                    const currentPassword = document.getElementById('current-password').value;
+                    const newPassword = document.getElementById('new-password').value;
+                    const confirmPassword = document.getElementById('confirm-password').value;
+
+                    // Basic validation
+                    if (!currentPassword || !newPassword || !confirmPassword) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'All fields are required',
+                            confirmButtonColor: '#83951c'
+                        });
+                        return;
+                    }
+
+                    // Check if new password is same as current password
+                    if (currentPassword === newPassword) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'New password must be different from current password',
+                            confirmButtonColor: '#83951c'
+                        });
+                        return;
+                    }
+
+                    if (newPassword !== confirmPassword) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'New passwords do not match',
+                            confirmButtonColor: '#83951c'
+                        });
+                        return;
+                    }
+
+                    try {
+                        // Show loading state
+                        Swal.fire({
+                            title: 'Updating Password',
+                            text: 'Please wait...',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+
+                        // Get the admin email from localStorage
+                        const adminEmail = localStorage.getItem('adminEmail');
+                        if (!adminEmail) {
+                            throw new Error('Admin email not found. Please log in again.');
+                        }
+
+                        // First validate current password
+                        try {
+                            await window.electronAPI.validateAdminCredentials(adminEmail, currentPassword);
+                        } catch (error) {
+                            throw new Error('Invalid email or password');
+                        }
+
+                        // Then update password
+                        await window.electronAPI.updateAdminPassword(adminEmail, currentPassword, newPassword);
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: 'Password updated successfully',
+                            confirmButtonColor: '#83951c'
+                        });
+                        form.reset();
+                    } catch (error) {
+                        console.error('Password change error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.message === 'Invalid email or password'
+                                ? 'Invalid email or password'
+                                : 'Failed to update password. Please try again.',
+                            confirmButtonColor: '#83951c'
+                        });
+                    }
+                });
+            }
+        }
+
+        async function saveSystemSettings() {
+            const bottleTimeout = document.getElementById('bottle-timeout').value;
+            const maxBottleWeight = document.getElementById('max-bottle-weight').value;
+
+            try {
+                await window.electronAPI.updateSystemSettings({
+                    bottleTimeout: parseInt(bottleTimeout),
+                    maxBottleWeight: parseInt(maxBottleWeight)
+                });
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: 'System settings saved successfully',
+                    confirmButtonColor: '#83951c'
+                });
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to save system settings',
+                    confirmButtonColor: '#83951c'
+                });
+            }
+        }
+
+        async function loadSystemSettings() {
+            try {
+                const settings = await window.electronAPI.getSystemSettings();
+                document.getElementById('bottle-timeout').value = settings.bottleTimeout;
+                document.getElementById('max-bottle-weight').value = settings.maxBottleWeight;
+            } catch (error) {
+                console.error('Failed to load system settings:', error);
+            }
+        }
+
+        async function exportDatabase() {
+            try {
+                await window.electronAPI.exportDatabase();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: 'Database exported successfully',
+                    confirmButtonColor: '#83951c'
+                });
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to export database',
+                    confirmButtonColor: '#83951c'
+                });
+            }
+        }
+
+        async function importDatabase() {
+            try {
+                await window.electronAPI.importDatabase();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: 'Database imported successfully',
+                    confirmButtonColor: '#83951c'
+                });
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to import database',
+                    confirmButtonColor: '#83951c'
+                });
+            }
+        }
+
+        // Add this function to your existing script section
+        async function handleLogout() {
+            try {
+                const result = await Swal.fire({
+                    title: 'Logout Confirmation',
+                    text: 'Are you sure you want to logout?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#83951c',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, logout',
+                    cancelButtonText: 'Cancel'
+                });
+
+                if (result.isConfirmed) {
+                    // Clear any stored admin data
+                    localStorage.removeItem('adminEmail');
+                    localStorage.removeItem('adminToken');
+                    
+                    // Show success message
+                    await Swal.fire({
+                        title: 'Logged Out!',
+                        text: 'You have been successfully logged out.',
+                        icon: 'success',
+                        confirmButtonColor: '#83951c',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+
+                    // Redirect to login page
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'An error occurred during logout. Please try again.',
+                    icon: 'error',
+                    confirmButtonColor: '#83951c'
+                });
             }
         }
     </script>

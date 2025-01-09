@@ -1,20 +1,42 @@
 {
   "name": "bp-desktop-app",
   "version": "1.0.0",
+  "description": "BottlePoints Desktop Application",
+  "author": {
+    "name": "BottlePoints",
+    "email": "bottlepoints@gmail.com"
+  },
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder",
+    "dist": "electron-builder"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "devDependencies": {
-    "electron": "^32.2.0",
-    "electron-reload": "^2.0.0-alpha.1"
+  "build": {
+    "appId": "com.bottlepoints.app",
+    "productName": "BottlePoints",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/electron-reload/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
   },
   "dependencies": {
     "firebase": "^10.14.1",
     "serialport": "^12.0.0"
+  },
+  "devDependencies": {
+    "electron": "^32.2.0",
+    "electron-builder": "^24.13.3"
   }
 }

@@ -84,9 +84,11 @@
         }
 
         .qr-prompt p {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             margin-bottom: 1rem;
             color: #666;
+            font-family: 'Poppins';
+            font-weight: 500;
         }
 
         .scanning-animation {
@@ -210,6 +212,7 @@
     let currentUserId = null;
     let userInactivityTimer;
     let bottleDetectionTimer;
+    let successfullyDetectedBottles = [];
 
     // Helper function for countdown alert
     function showCountdownAlert(title, text) {
@@ -258,6 +261,7 @@
         bottleScanned = false;
         bottleDetected = false;
         currentUserId = null;
+        successfullyDetectedBottles = [];
         
         // Ensure scan bottle button is disabled
         const scanBottleButton = document.getElementById('start-scan-bottle');
@@ -281,22 +285,70 @@
                 Swal.showLoading();
                 startBottleDetectionTimer();
             },
-            willClose: () => {
+            willClose: async () => {
                 if (!bottleDetected) {
-                    Swal.fire({
-                        title: 'Timeout',
-                        text: 'Bottle not detected within time limit',
-                        icon: 'warning',
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        showCountdownAlert(
-                            'Process Restarting',
-                            'No bottle detected'
-                        ).then(() => {
-                            resetModalState();
+                    // Check if there are any successfully detected bottles
+                    if (successfullyDetectedBottles.length > 0) {
+                        try {
+                            // Update the table to only show successfully detected bottles
+                            const bottleTableBody = document.querySelector('#bottleTable tbody');
+                            bottleTableBody.innerHTML = '';
+                            let totalPoints = 0;
+                            
+                            successfullyDetectedBottles.forEach((bottle, index) => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${index + 1}</td>
+                                    <td>${bottle.brandName}</td>
+                                    <td>${bottle.size}</td>
+                                    <td>${bottle.points}</td>
+                                `;
+                                bottleTableBody.appendChild(row);
+                                totalPoints += bottle.points;
+                            });
+                            
+                            document.getElementById('totalPoints').textContent = totalPoints;
+
+                            // Store only the successfully detected bottles
+                            await storeUserPoints();
+                            Swal.fire({
+                                title: 'Session Complete',
+                                text: 'Your detected bottles have been saved successfully',
+                                icon: 'success',
+                                timer: 2000,
+                                showConfirmButton: false
+                            }).then(() => {
+                                resetModalState();
+                            });
+                        } catch (error) {
+                            console.error('Error storing points:', error);
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'Failed to save your bottles',
+                                icon: 'error',
+                                timer: 2000,
+                                showConfirmButton: false
+                            }).then(() => {
+                                resetModalState();
+                            });
+                        }
+                    } else {
+                        // If no bottles were successfully detected
+                        Swal.fire({
+                            title: 'Timeout',
+                            text: 'Bottle not detected within time limit',
+                            icon: 'warning',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            showCountdownAlert(
+                                'Process Restarting',
+                                'No bottle detected'
+                            ).then(() => {
+                                resetModalState();
+                            });
                         });
-                    });
+                    }
                 }
             }
         });
@@ -407,6 +459,18 @@
         
         console.log('Bottle detected by sensor');
         bottleDetected = true;
+        
+        // Add the current bottle to successfully detected bottles
+        const bottleTableBody = document.querySelector('#bottleTable tbody');
+        const lastRow = bottleTableBody.lastElementChild;
+        if (lastRow) {
+            successfullyDetectedBottles.push({
+                brandName: lastRow.cells[1].textContent,
+                size: lastRow.cells[2].textContent,
+                points: parseInt(lastRow.cells[3].textContent)
+            });
+        }
+
         Swal.close();
 
         let timerInterval;

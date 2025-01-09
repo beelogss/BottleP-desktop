@@ -46,6 +46,9 @@ const {
 
   calculateTotalRevenue,
   getBottleTransactions,
+
+  validateAdminCredentials,
+  updateAdminPassword
 } = require('./main/firebase');
 let mainWindow;
 function createWindow() {
@@ -88,7 +91,6 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
-
 // List available COM ports
 SerialPort.list().then(ports => {
   ports.forEach(port => {
@@ -424,6 +426,26 @@ ipcMain.handle('get-bottle-transactions', async () => {
         return transactions;
     } catch (error) {
         console.error('Error getting bottle transactions:', error);
+        throw error;
+    }
+});
+
+ipcMain.handle('validate-admin-credentials', async (event, email, password) => {
+    try {
+        const result = await validateAdminCredentials(email, password);
+        return { success: true };
+    } catch (error) {
+        console.error('Error validating credentials:', error);
+        throw new Error('Invalid credentials');
+    }
+});
+
+ipcMain.handle('update-admin-password', async (event, email, currentPassword, newPassword) => {
+    try {
+        const result = await updateAdminPassword(email, currentPassword, newPassword);
+        return { success: true };
+    } catch (error) {
+        console.error('Error updating password:', error);
         throw error;
     }
 });

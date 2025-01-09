@@ -1,7 +1,7 @@
 const { initializeApp } = require('firebase/app');
 const { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, where, writeBatch } = require('firebase/firestore');
 const { getStorage, ref, uploadBytes, getDownloadURL } = require('firebase/storage');
-const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
+const { getAuth, signInWithEmailAndPassword, updatePassword, reauthenticateWithCredential, EmailAuthProvider } = require('firebase/auth');
 
 const firebaseConfig = {
   apiKey: "AIzaSyCNBtOJqXJXiSbEZLO83DJ1oq2etkKUbI4",
@@ -433,6 +433,36 @@ async function getBottleTransactions() {
     }
 }
 
+async function validateAdminCredentials(email, password) {
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        return { success: true, user: userCredential.user };
+    } catch (error) {
+        console.error('Error validating admin credentials:', error);
+        throw error;
+    }
+}
+
+async function updateAdminPassword(email, currentPassword, newPassword) {
+    try {
+        const user = auth.currentUser;
+        if (!user) {
+            throw new Error('No user is currently signed in');
+        }
+
+        // Reauthenticate first
+        const credential = EmailAuthProvider.credential(email, currentPassword);
+        await reauthenticateWithCredential(user, credential);
+
+        // Then update password
+        await updatePassword(user, newPassword);
+        return { success: true };
+    } catch (error) {
+        console.error('Error updating admin password:', error);
+        throw error;
+    }
+}
+
 module.exports = {
   getUserCountFromFirestore,
   getClaimedRewardsCount,
@@ -476,4 +506,11 @@ module.exports = {
 
   calculateTotalRevenue,
   getBottleTransactions,
+
+  validateAdminCredentials,
+  updateAdminPassword,
+  signInWithEmailAndPassword,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider
 };

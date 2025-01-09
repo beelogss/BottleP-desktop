@@ -45,4 +45,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   calculateTotalRevenue: () => ipcRenderer.invoke('calculate-total-revenue'),
   getBottleTransactions: () => ipcRenderer.invoke('get-bottle-transactions'),
+
+  validateAdminCredentials: (email, password) => 
+      ipcRenderer.invoke('validate-admin-credentials', email, password),
+  updateAdminPassword: (email, currentPassword, newPassword) => 
+      ipcRenderer.invoke('update-admin-password', email, currentPassword, newPassword),
 });
